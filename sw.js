@@ -1,6 +1,9 @@
-const CACHE="lizhi-cloud-v5";
-const FILES=["","index.html","styles.css","theme.css","study.css","chat.css","app.js","manifest.webmanifest","media-manifest.json"].map(file=>new URL(file,self.registration.scope).href);
-self.addEventListener("install",event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES))));
+const CACHE="lizhi-cloud-v6";
+const FILES=["","index.html","styles.css?v=6","theme.css?v=6","study.css?v=6","chat.css?v=6","app.js?v=6","manifest.webmanifest","media-manifest.json"].map(file=>new URL(file,self.registration.scope).href);
+self.addEventListener("install",event=>{
+  self.skipWaiting();
+  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)));
+});
 self.addEventListener("activate",event=>event.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))),self.clients.claim()])));
 self.addEventListener("fetch",event=>{
   if(event.request.method!=="GET")return;

@@ -95,5 +95,5 @@ function exportBackup(){const payload={app:"立之雲端庫・本機版",version
 restoreInput.addEventListener("change",async()=>{const file=restoreInput.files[0];if(!file)return;try{const payload=JSON.parse(await file.text());if(!Array.isArray(payload.records))throw new Error("格式不正確");for(const row of payload.records)await putRecord(row);await refresh();toast("資料目錄已匯入");}catch{toast("備份檔格式不正確");}restoreInput.value="";});
 
 initializeChatIdentity();
-if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js").catch(()=>{});
+if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js").then(registration=>registration.update()).catch(()=>{});
 seed().then(loadCloudMedia).then(refresh).catch(error=>{app.innerHTML=`<div class="empty">無法開啟資料庫：${escapeHtml(error.message)}</div>`;});
