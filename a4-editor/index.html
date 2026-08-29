@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>紙上格局｜A4 網格文件編輯器</title>
   <meta name="description" content="可拖曳固定文字框的 A4 網格編輯器，支援 Word 與 PDF 匯出。">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=10">
 </head>
 <body>
   <main class="app">
     <header class="topbar">
-      <div class="brand"><span>格</span><div><strong>紙上格局</strong><small>GRID PAPER STUDIO</small></div></div>
+      <a class="brand" href="../?open=a4" target="_top" title="返回立之雲端庫"><span>格</span><div><strong>紙上格局</strong><small>返回立之雲端庫</small></div></a>
       <div class="doc-name"><input id="doc-title" value="我的 A4 文件" aria-label="文件名稱"><span id="save-status">已自動儲存</span></div>
       <div class="top-actions">
         <button id="undo" class="icon-button" aria-label="復原">↶</button>
@@ -79,6 +79,12 @@
           <div><span class="label">樣式</span><div class="format-row"><button id="bold"><b>B</b></button><button id="italic"><em>I</em></button><span></span><button data-align="left">≡</button><button data-align="center">≡</button><button data-align="right">≡</button><button data-align="justify">☷</button></div></div>
           <label><span>文字顏色</span><div class="color"><input id="color" type="color"><code id="color-code">#263541</code></div></label>
         </div>
+        <div id="table-properties" class="table-properties" hidden>
+          <span class="label">表格列數與欄數</span>
+          <div class="property-grid"><label><span>列數</span><div class="number"><input id="selected-table-rows" type="number" min="1" max="12"><small>列</small></div></label><label><span>欄數</span><div class="number"><input id="selected-table-cols" type="number" min="1" max="8"><small>欄</small></div></label></div>
+          <button id="apply-table-size" type="button">套用列數與欄數</button>
+          <p>調整後會保留仍在範圍內的文字與圖片。</p>
+        </div>
         <hr>
         <div><span class="label">位置與尺寸</span><div class="geometry"><label>X<input id="pos-x" type="number"></label><label>Y<input id="pos-y" type="number"></label><label>W<input id="width" type="number"></label><label>H<input id="height" type="number"></label></div></div>
         <p class="overflow-note">文字超出框線時會被隱藏，不會影響其他文字框。可拖曳右下角放大空間。</p>
@@ -87,7 +93,7 @@
     </aside>
     <div id="toast" class="toast" hidden><span>✓</span><b></b></div>
   </main>
-  <script src="docx-builder.js"></script>
-  <script src="app.js"></script>
+  <script src="docx-builder.js?v=10"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>
