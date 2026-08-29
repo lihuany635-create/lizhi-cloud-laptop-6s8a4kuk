@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>紙上格局｜A4 網格文件編輯器</title>
   <meta name="description" content="可拖曳固定文字框的 A4 網格編輯器，支援 Word 與 PDF 匯出。">
-  <link rel="stylesheet" href="styles.css?v=10">
+  <link rel="stylesheet" href="styles.css?v=11">
 </head>
 <body>
   <main class="app">
@@ -47,7 +47,7 @@
       <section class="tool-section"><p>物件</p><button id="duplicate" class="tool-row"><span>▣</span><span>建立副本</span><kbd>⌘D</kbd></button><button id="delete" class="tool-row danger"><span>♲</span><span>刪除物件</span><kbd>⌫</kbd></button></section>
       <section class="tool-section"><p>畫布</p><button id="toggle-orientation" class="tool-row"><span>↻</span><span id="orientation-label">切換橫向</span><kbd id="orientation-status">直向</kbd></button><button id="toggle-grid" class="tool-row"><span>▦</span><span>顯示網格</span><i class="active"></i></button><button id="toggle-snap" class="tool-row"><span>∩</span><span>吸附網格</span><i class="active"></i></button></section>
       <section class="tool-section"><p>重複使用</p><button id="open-templates" class="template-launch"><span>▤</span><span><b>我的模板</b><small><em id="template-count">1</em> 份已儲存模板</small></span><strong>›</strong></button></section>
-      <div class="hint"><b>TIP</b><p>文字框與整張表格都能拖曳；輸入內容不會推擠其他物件。</p></div>
+      <div class="hint"><b>TIP</b><p>選取表格後可拖曳內部分隔線調整欄寬與列高；整張表格也能移動。</p></div>
     </aside>
 
     <aside id="template-panel" class="template-panel" aria-label="模板庫" hidden>
@@ -93,7 +93,7 @@
     </aside>
     <div id="toast" class="toast" hidden><span>✓</span><b></b></div>
   </main>
-  <script src="docx-builder.js?v=10"></script>
-  <script src="app.js?v=10"></script>
+  <script src="docx-builder.js?v=11"></script>
+  <script src="app.js?v=11"></script>
 </body>
 </html>
