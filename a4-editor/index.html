@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>紙上格局｜A4 網格文件編輯器</title>
+  <meta name="description" content="可拖曳固定文字框的 A4 網格編輯器，支援 Word 與 PDF 匯出。">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand"><span>格</span><div><strong>紙上格局</strong><small>GRID PAPER STUDIO</small></div></div>
+      <div class="doc-name"><input id="doc-title" value="我的 A4 文件" aria-label="文件名稱"><span id="save-status">已自動儲存</span></div>
+      <div class="top-actions">
+        <button id="undo" class="icon-button" aria-label="復原">↶</button>
+        <button id="redo" class="icon-button" aria-label="重做">↷</button>
+        <button id="save-template-changes" class="template-save-changes" hidden><span>✓</span>儲存模板變更</button>
+        <div class="export-wrap">
+          <button id="export-toggle" class="export-button"><span class="download-icon">⇩</span><span>匯出文件</span><span>⌄</span></button>
+          <div id="export-menu" class="export-menu" hidden>
+            <button id="export-word"><span class="file-icon word">W</span><span><b>Word 文件</b><small>固定座標、可編輯文字框 · .docx</small></span></button>
+            <button id="export-pdf"><span class="file-icon pdf">P</span><span><b>PDF 文件</b><small>固定 A4 版面 · .pdf</small></span></button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <nav class="word-ribbon" aria-label="文件功能列">
+      <div class="ribbon-group file-group"><button id="new-document" title="建立空白文件"><span>＋</span><small>新增</small></button><button id="save-now" title="立即儲存"><span>▣</span><small>儲存</small></button><button id="save-project" title="下載可再次編輯的專案檔"><span>⇩</span><small>下載專案</small></button><button id="open-project" title="開啟專案檔"><span>↥</span><small>開啟</small></button><input id="project-file" type="file" accept=".a4doc,.json" hidden></div>
+      <div class="ribbon-group clipboard-group"><button id="cut-block" title="剪下文字框"><span>✂</span><small>剪下</small></button><button id="copy-block" title="複製文字框"><span>▣</span><small>複製</small></button><button id="paste-block" title="貼上文字框"><span>▤</span><small>貼上</small></button></div>
+      <div class="ribbon-group font-group"><label>字型<select id="ribbon-font"><option>Noto Sans TC</option><option>Noto Serif TC</option><option>Arial</option><option>Georgia</option><option>Microsoft JhengHei</option></select></label><label>大小<input id="ribbon-size" type="number" min="8" max="72"></label><button id="font-smaller" title="縮小字型">A−</button><button id="font-larger" title="放大字型">A＋</button><button id="ribbon-bold" title="粗體"><b>B</b></button><button id="ribbon-italic" title="斜體"><em>I</em></button><button id="ribbon-underline" title="底線"><u>U</u></button><button id="ribbon-strike" title="刪除線"><s>S</s></button><label class="mini-color" title="文字顏色">A<input id="ribbon-color" type="color"></label><label class="mini-color highlight" title="螢光標記">▰<input id="ribbon-highlight" type="color" value="#fff2a8"></label></div>
+      <div class="ribbon-group paragraph-group"><button id="bullet-list" title="項目符號">•≡</button><button id="number-list" title="編號清單">1≡</button><button id="outdent" title="減少縮排">←</button><button id="indent" title="增加縮排">→</button><button data-ribbon-align="left" title="靠左對齊">≡</button><button data-ribbon-align="center" title="置中對齊">≡</button><button data-ribbon-align="right" title="靠右對齊">≡</button><button data-ribbon-align="justify" title="分散對齊">☷</button><label>行距<select id="ribbon-line-height"><option value="1">1.0</option><option value="1.2">1.2</option><option value="1.5">1.5</option><option value="1.75">1.75</option><option value="2">2.0</option></select></label></div>
+      <div class="ribbon-group search-group"><button id="open-find" title="搜尋與取代"><span>⌕</span><small>尋找取代</small></button></div>
+    </nav>
+
+    <section id="find-panel" class="find-panel" hidden>
+      <header><b>搜尋與取代</b><button id="close-find" aria-label="關閉搜尋">×</button></header>
+      <label>尋找<input id="find-text" placeholder="輸入搜尋文字"></label>
+      <label>取代為<input id="replace-text" placeholder="輸入替換文字"></label>
+      <div><button id="find-next">尋找下一個</button><button id="replace-all">全部取代</button></div>
+      <p id="find-result">輸入文字後開始搜尋。</p>
+    </section>
+
+    <aside id="sidebar" class="sidebar">
+      <section class="tool-section"><p>新增</p><button id="add-text" class="add-text"><span>＋</span><b>文字框</b><small>固定位置輸入</small></button><button id="add-cell" class="add-text add-cell"><span>□</span><b>可移動格子</b><small>有框線，可輸入內容</small></button></section>
+      <section class="tool-section"><p>物件</p><button id="duplicate" class="tool-row"><span>▣</span><span>建立副本</span><kbd>⌘D</kbd></button><button id="delete" class="tool-row danger"><span>♲</span><span>刪除物件</span><kbd>⌫</kbd></button></section>
+      <section class="tool-section"><p>畫布</p><button id="toggle-grid" class="tool-row"><span>▦</span><span>顯示網格</span><i class="active"></i></button><button id="toggle-snap" class="tool-row"><span>∩</span><span>吸附網格</span><i class="active"></i></button></section>
+      <section class="tool-section"><p>重複使用</p><button id="open-templates" class="template-launch"><span>▤</span><span><b>我的模板</b><small><em id="template-count">1</em> 份已儲存模板</small></span><strong>›</strong></button></section>
+      <div class="hint"><b>TIP</b><p>按住上方把手拖曳文字框，內容不會推擠其他區塊。</p></div>
+    </aside>
+
+    <aside id="template-panel" class="template-panel" aria-label="模板庫" hidden>
+      <header><div><p>Template Library</p><h2>我的模板</h2></div><button id="close-templates" aria-label="關閉模板庫">×</button></header>
+      <section class="save-template">
+        <label for="template-name">將目前頁面存成模板</label>
+        <div><input id="template-name" placeholder="例如：每週會議紀錄"><button id="save-template">儲存</button></div>
+        <small>會保存所有文字框、位置與文字樣式。</small>
+      </section>
+      <div class="template-subhead"><span>已儲存模板</span><small>點擊建立可編輯副本</small></div>
+      <div id="template-list" class="template-list"></div>
+      <div id="template-empty" class="template-empty" hidden><span>▤</span><b>還沒有自訂模板</b><p>將常用版面儲存起來，下次即可快速複製。</p></div>
+    </aside>
+    <div id="template-scrim" class="template-scrim" hidden></div>
+
+    <section id="stage" class="stage">
+      <div class="stage-head"><div><b>A4 畫布</b><span>210 × 297 mm</span></div><div class="mobile-stage-actions"><button id="mobile-templates">模板</button><button id="mobile-tools">工具</button></div><p><i></i> 網格間距 16px · <span id="snap-status">吸附中</span></p></div>
+      <div id="page-shell" class="page-shell"><div id="page" class="page show-grid"><div class="safe-area"></div></div></div>
+      <div class="zoom"><button id="zoom-out" aria-label="縮小">−</button><span id="zoom-value">72%</span><button id="zoom-in" aria-label="放大">＋</button></div>
+    </section>
+
+    <aside class="inspector">
+      <header class="inspector-head"><div><p>屬性面板</p><h2>文字設定</h2></div><button id="lock" aria-label="鎖定文字框">▢</button></header>
+      <div id="empty-inspector" class="empty-inspector" hidden><span>Aa</span><h3>尚未選取文字</h3><p>選取頁面上的文字框，即可調整字型、大小與對齊方式。</p></div>
+      <div id="properties" class="properties">
+        <label><span>字型</span><select id="font-family"><option>Noto Sans TC</option><option>Noto Serif TC</option><option>Arial</option><option>Georgia</option><option>Microsoft JhengHei</option></select></label>
+        <div class="property-grid"><label><span>字級</span><div class="number"><input id="font-size" type="number" min="8" max="72"><small>px</small></div></label><label><span>行距</span><div class="number"><input id="line-height" type="number" min="1" max="2.5" step="0.05"><small>×</small></div></label></div>
+        <div><span class="label">樣式</span><div class="format-row"><button id="bold"><b>B</b></button><button id="italic"><em>I</em></button><span></span><button data-align="left">≡</button><button data-align="center">≡</button><button data-align="right">≡</button><button data-align="justify">☷</button></div></div>
+        <label><span>文字顏色</span><div class="color"><input id="color" type="color"><code id="color-code">#263541</code></div></label>
+        <hr>
+        <div><span class="label">位置與尺寸</span><div class="geometry"><label>X<input id="pos-x" type="number"></label><label>Y<input id="pos-y" type="number"></label><label>W<input id="width" type="number"></label><label>H<input id="height" type="number"></label></div></div>
+        <p class="overflow-note">文字超出框線時會被隱藏，不會影響其他文字框。可拖曳右下角放大空間。</p>
+      </div>
+      <div class="status-card"><span>✓</span><div><b>版面安全</b><p id="block-count">8 個獨立文字框 · 無內容推擠</p></div></div>
+    </aside>
+    <div id="toast" class="toast" hidden><span>✓</span><b></b></div>
+  </main>
+  <script src="docx-builder.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

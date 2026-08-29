@@ -4,6 +4,16 @@
   overflow: hidden;
 }
 
+.route-a4 .main {
+  height: calc(100vh - 76px);
+  padding: 0;
+  overflow: hidden;
+}
+
+.a4-embedded {
+  background: #e8ebeb;
+}
+
 .study-embedded {
   height: 100%;
   min-height: 0;
@@ -55,7 +65,8 @@
 }
 
 @media (max-width: 680px) {
-  .route-study .main {
+  .route-study .main,
+  .route-a4 .main {
     height: calc(100dvh - 68px);
     padding: 0;
   }
