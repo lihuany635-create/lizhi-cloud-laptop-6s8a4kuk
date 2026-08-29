@@ -43,7 +43,7 @@
     </section>
 
     <aside id="sidebar" class="sidebar">
-      <section class="tool-section"><p>新增</p><button id="add-text" class="add-text"><span>＋</span><b>文字框</b><small>固定位置輸入</small></button><div class="table-create"><div class="table-size-row"><label>列<input id="table-rows" type="number" min="1" max="12" value="3"></label><label>欄<input id="table-cols" type="number" min="1" max="8" value="3"></label></div><button id="add-cell" class="add-text add-cell"><span>▦</span><b>插入表格</b><small>每格可輸入，整張可移動</small></button></div></section>
+      <section class="tool-section"><p>新增</p><button id="add-text" class="add-text"><span>＋</span><b>文字框</b><small>固定位置輸入</small></button><button id="add-image" class="add-text add-image"><span>▧</span><b>插入圖片</b><small>可拖曳、縮放與匯出</small></button><input id="image-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden><div class="table-create"><div class="table-size-row"><label>列<input id="table-rows" type="number" min="1" max="12" value="3"></label><label>欄<input id="table-cols" type="number" min="1" max="8" value="3"></label></div><button id="add-cell" class="add-text add-cell"><span>▦</span><b>插入表格</b><small>每格可輸入，整張可移動</small></button></div></section>
       <section class="tool-section"><p>物件</p><button id="duplicate" class="tool-row"><span>▣</span><span>建立副本</span><kbd>⌘D</kbd></button><button id="delete" class="tool-row danger"><span>♲</span><span>刪除物件</span><kbd>⌫</kbd></button></section>
       <section class="tool-section"><p>畫布</p><button id="toggle-orientation" class="tool-row"><span>↻</span><span id="orientation-label">切換橫向</span><kbd id="orientation-status">直向</kbd></button><button id="toggle-grid" class="tool-row"><span>▦</span><span>顯示網格</span><i class="active"></i></button><button id="toggle-snap" class="tool-row"><span>∩</span><span>吸附網格</span><i class="active"></i></button></section>
       <section class="tool-section"><p>重複使用</p><button id="open-templates" class="template-launch"><span>▤</span><span><b>我的模板</b><small><em id="template-count">1</em> 份已儲存模板</small></span><strong>›</strong></button></section>
@@ -73,10 +73,12 @@
       <header class="inspector-head"><div><p>屬性面板</p><h2>文字設定</h2></div><button id="lock" aria-label="鎖定文字框">▢</button></header>
       <div id="empty-inspector" class="empty-inspector" hidden><span>Aa</span><h3>尚未選取文字</h3><p>選取頁面上的文字框，即可調整字型、大小與對齊方式。</p></div>
       <div id="properties" class="properties">
-        <label><span>字型</span><select id="font-family"><option>Noto Sans TC</option><option>Noto Serif TC</option><option>Arial</option><option>Georgia</option><option>Microsoft JhengHei</option></select></label>
-        <div class="property-grid"><label><span>字級</span><div class="number"><input id="font-size" type="number" min="8" max="72"><small>px</small></div></label><label><span>行距</span><div class="number"><input id="line-height" type="number" min="1" max="2.5" step="0.05"><small>×</small></div></label></div>
-        <div><span class="label">樣式</span><div class="format-row"><button id="bold"><b>B</b></button><button id="italic"><em>I</em></button><span></span><button data-align="left">≡</button><button data-align="center">≡</button><button data-align="right">≡</button><button data-align="justify">☷</button></div></div>
-        <label><span>文字顏色</span><div class="color"><input id="color" type="color"><code id="color-code">#263541</code></div></label>
+        <div id="text-properties" class="text-properties">
+          <label><span>字型</span><select id="font-family"><option>Noto Sans TC</option><option>Noto Serif TC</option><option>Arial</option><option>Georgia</option><option>Microsoft JhengHei</option></select></label>
+          <div class="property-grid"><label><span>字級</span><div class="number"><input id="font-size" type="number" min="8" max="72"><small>px</small></div></label><label><span>行距</span><div class="number"><input id="line-height" type="number" min="1" max="2.5" step="0.05"><small>×</small></div></label></div>
+          <div><span class="label">樣式</span><div class="format-row"><button id="bold"><b>B</b></button><button id="italic"><em>I</em></button><span></span><button data-align="left">≡</button><button data-align="center">≡</button><button data-align="right">≡</button><button data-align="justify">☷</button></div></div>
+          <label><span>文字顏色</span><div class="color"><input id="color" type="color"><code id="color-code">#263541</code></div></label>
+        </div>
         <hr>
         <div><span class="label">位置與尺寸</span><div class="geometry"><label>X<input id="pos-x" type="number"></label><label>Y<input id="pos-y" type="number"></label><label>W<input id="width" type="number"></label><label>H<input id="height" type="number"></label></div></div>
         <p class="overflow-note">文字超出框線時會被隱藏，不會影響其他文字框。可拖曳右下角放大空間。</p>
