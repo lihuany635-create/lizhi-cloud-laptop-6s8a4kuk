@@ -19,7 +19,7 @@
         <div class="export-wrap">
           <button id="export-toggle" class="export-button"><span class="download-icon">⇩</span><span>匯出文件</span><span>⌄</span></button>
           <div id="export-menu" class="export-menu" hidden>
-            <button id="export-word"><span class="file-icon word">W</span><span><b>Word 文件</b><small>固定座標、可編輯文字框 · .docx</small></span></button>
+            <button id="export-word"><span class="file-icon word">W</span><span><b>Word 文件</b><small>固定座標、可編輯文字框與表格 · .docx</small></span></button>
             <button id="export-pdf"><span class="file-icon pdf">P</span><span><b>PDF 文件</b><small>固定 A4 版面 · .pdf</small></span></button>
           </div>
         </div>
@@ -43,11 +43,11 @@
     </section>
 
     <aside id="sidebar" class="sidebar">
-      <section class="tool-section"><p>新增</p><button id="add-text" class="add-text"><span>＋</span><b>文字框</b><small>固定位置輸入</small></button><button id="add-cell" class="add-text add-cell"><span>□</span><b>可移動格子</b><small>有框線，可輸入內容</small></button></section>
+      <section class="tool-section"><p>新增</p><button id="add-text" class="add-text"><span>＋</span><b>文字框</b><small>固定位置輸入</small></button><div class="table-create"><div class="table-size-row"><label>列<input id="table-rows" type="number" min="1" max="12" value="3"></label><label>欄<input id="table-cols" type="number" min="1" max="8" value="3"></label></div><button id="add-cell" class="add-text add-cell"><span>▦</span><b>插入表格</b><small>每格可輸入，整張可移動</small></button></div></section>
       <section class="tool-section"><p>物件</p><button id="duplicate" class="tool-row"><span>▣</span><span>建立副本</span><kbd>⌘D</kbd></button><button id="delete" class="tool-row danger"><span>♲</span><span>刪除物件</span><kbd>⌫</kbd></button></section>
-      <section class="tool-section"><p>畫布</p><button id="toggle-grid" class="tool-row"><span>▦</span><span>顯示網格</span><i class="active"></i></button><button id="toggle-snap" class="tool-row"><span>∩</span><span>吸附網格</span><i class="active"></i></button></section>
+      <section class="tool-section"><p>畫布</p><button id="toggle-orientation" class="tool-row"><span>↻</span><span id="orientation-label">切換橫向</span><kbd id="orientation-status">直向</kbd></button><button id="toggle-grid" class="tool-row"><span>▦</span><span>顯示網格</span><i class="active"></i></button><button id="toggle-snap" class="tool-row"><span>∩</span><span>吸附網格</span><i class="active"></i></button></section>
       <section class="tool-section"><p>重複使用</p><button id="open-templates" class="template-launch"><span>▤</span><span><b>我的模板</b><small><em id="template-count">1</em> 份已儲存模板</small></span><strong>›</strong></button></section>
-      <div class="hint"><b>TIP</b><p>按住上方把手拖曳文字框，內容不會推擠其他區塊。</p></div>
+      <div class="hint"><b>TIP</b><p>文字框與整張表格都能拖曳；輸入內容不會推擠其他物件。</p></div>
     </aside>
 
     <aside id="template-panel" class="template-panel" aria-label="模板庫" hidden>
@@ -55,7 +55,7 @@
       <section class="save-template">
         <label for="template-name">將目前頁面存成模板</label>
         <div><input id="template-name" placeholder="例如：每週會議紀錄"><button id="save-template">儲存</button></div>
-        <small>會保存所有文字框、位置與文字樣式。</small>
+        <small>會保存方向、文字框、表格、位置與文字樣式。</small>
       </section>
       <div class="template-subhead"><span>已儲存模板</span><small>點擊建立可編輯副本</small></div>
       <div id="template-list" class="template-list"></div>
@@ -64,7 +64,7 @@
     <div id="template-scrim" class="template-scrim" hidden></div>
 
     <section id="stage" class="stage">
-      <div class="stage-head"><div><b>A4 畫布</b><span>210 × 297 mm</span></div><div class="mobile-stage-actions"><button id="mobile-templates">模板</button><button id="mobile-tools">工具</button></div><p><i></i> 網格間距 16px · <span id="snap-status">吸附中</span></p></div>
+      <div class="stage-head"><div><b>A4 畫布</b><span id="page-size">210 × 297 mm · 直向</span></div><div class="mobile-stage-actions"><button id="mobile-templates">模板</button><button id="mobile-tools">工具</button></div><p><i></i> 網格間距 16px · <span id="snap-status">吸附中</span></p></div>
       <div id="page-shell" class="page-shell"><div id="page" class="page show-grid"><div class="safe-area"></div></div></div>
       <div class="zoom"><button id="zoom-out" aria-label="縮小">−</button><span id="zoom-value">72%</span><button id="zoom-in" aria-label="放大">＋</button></div>
     </section>
@@ -81,7 +81,7 @@
         <div><span class="label">位置與尺寸</span><div class="geometry"><label>X<input id="pos-x" type="number"></label><label>Y<input id="pos-y" type="number"></label><label>W<input id="width" type="number"></label><label>H<input id="height" type="number"></label></div></div>
         <p class="overflow-note">文字超出框線時會被隱藏，不會影響其他文字框。可拖曳右下角放大空間。</p>
       </div>
-      <div class="status-card"><span>✓</span><div><b>版面安全</b><p id="block-count">8 個獨立文字框 · 無內容推擠</p></div></div>
+      <div class="status-card"><span>✓</span><div><b>版面安全</b><p id="block-count">8 個獨立物件 · 無內容推擠</p></div></div>
     </aside>
     <div id="toast" class="toast" hidden><span>✓</span><b></b></div>
   </main>

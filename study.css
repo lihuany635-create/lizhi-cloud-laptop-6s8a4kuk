@@ -14,6 +14,10 @@
   background: #e8ebeb;
 }
 
+.a4-embedded .study-frame-wrap {
+  height: 100%;
+}
+
 .study-embedded {
   height: 100%;
   min-height: 0;
