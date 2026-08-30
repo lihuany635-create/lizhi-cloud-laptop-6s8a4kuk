@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>紙上格局｜A4 網格文件編輯器</title>
   <meta name="description" content="可拖曳固定文字框的 A4 網格編輯器，支援 Word 與 PDF 匯出。">
-  <link rel="stylesheet" href="styles.css?v=11">
+  <link rel="stylesheet" href="styles.css?v=12">
 </head>
 <body>
   <main class="app">
@@ -31,6 +31,7 @@
       <div class="ribbon-group clipboard-group"><button id="cut-block" title="剪下文字框"><span>✂</span><small>剪下</small></button><button id="copy-block" title="複製文字框"><span>▣</span><small>複製</small></button><button id="paste-block" title="貼上文字框"><span>▤</span><small>貼上</small></button></div>
       <div class="ribbon-group font-group"><label>字型<select id="ribbon-font"><option>Noto Sans TC</option><option>Noto Serif TC</option><option>Arial</option><option>Georgia</option><option>Microsoft JhengHei</option></select></label><label>大小<input id="ribbon-size" type="number" min="8" max="72"></label><button id="font-smaller" title="縮小字型">A−</button><button id="font-larger" title="放大字型">A＋</button><button id="ribbon-bold" title="粗體"><b>B</b></button><button id="ribbon-italic" title="斜體"><em>I</em></button><button id="ribbon-underline" title="底線"><u>U</u></button><button id="ribbon-strike" title="刪除線"><s>S</s></button><label class="mini-color" title="文字顏色">A<input id="ribbon-color" type="color"></label><label class="mini-color highlight" title="螢光標記">▰<input id="ribbon-highlight" type="color" value="#fff2a8"></label></div>
       <div class="ribbon-group paragraph-group"><button id="bullet-list" title="項目符號">•≡</button><button id="number-list" title="編號清單">1≡</button><button id="outdent" title="減少縮排">←</button><button id="indent" title="增加縮排">→</button><button data-ribbon-align="left" title="靠左對齊">≡</button><button data-ribbon-align="center" title="置中對齊">≡</button><button data-ribbon-align="right" title="靠右對齊">≡</button><button data-ribbon-align="justify" title="分散對齊">☷</button><label>行距<select id="ribbon-line-height"><option value="1">1.0</option><option value="1.2">1.2</option><option value="1.5">1.5</option><option value="1.75">1.75</option><option value="2">2.0</option></select></label></div>
+      <div class="ribbon-group page-group"><button id="add-page" title="在文件末端新增一頁"><span>＋</span><small>新增頁</small></button><button id="duplicate-page" title="複製目前頁面"><span>▣</span><small>複製頁</small></button><button id="delete-page" title="刪除目前頁面"><span>−</span><small>刪除頁</small></button></div>
       <div class="ribbon-group search-group"><button id="open-find" title="搜尋與取代"><span>⌕</span><small>尋找取代</small></button></div>
     </nav>
 
@@ -46,6 +47,7 @@
       <section class="tool-section"><p>新增</p><button id="add-text" class="add-text"><span>＋</span><b>文字框</b><small>固定位置輸入</small></button><button id="add-image" class="add-text add-image"><span>▧</span><b>插入圖片</b><small>可拖曳、縮放與匯出</small></button><input id="image-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden><div class="table-create"><div class="table-size-row"><label>列<input id="table-rows" type="number" min="1" max="12" value="3"></label><label>欄<input id="table-cols" type="number" min="1" max="8" value="3"></label></div><button id="add-cell" class="add-text add-cell"><span>▦</span><b>插入表格</b><small>每格可輸入，整張可移動</small></button></div></section>
       <section class="tool-section"><p>物件</p><button id="duplicate" class="tool-row"><span>▣</span><span>建立副本</span><kbd>⌘D</kbd></button><button id="delete" class="tool-row danger"><span>♲</span><span>刪除物件</span><kbd>⌫</kbd></button></section>
       <section class="tool-section"><p>畫布</p><button id="toggle-orientation" class="tool-row"><span>↻</span><span id="orientation-label">切換橫向</span><kbd id="orientation-status">直向</kbd></button><button id="toggle-grid" class="tool-row"><span>▦</span><span>顯示網格</span><i class="active"></i></button><button id="toggle-snap" class="tool-row"><span>∩</span><span>吸附網格</span><i class="active"></i></button></section>
+      <section class="tool-section page-settings"><p>頁首頁尾</p><label><span>頁首文字</span><input id="header-text" placeholder="例如：公司名稱"></label><label><span>頁尾文字</span><input id="footer-text" placeholder="例如：機密文件"></label><label class="page-number-row"><input id="show-page-number" type="checkbox" checked><span>顯示頁碼</span><select id="page-number-align" aria-label="頁碼位置"><option value="right">靠右</option><option value="center">置中</option><option value="left">靠左</option></select></label></section>
       <section class="tool-section"><p>重複使用</p><button id="open-templates" class="template-launch"><span>▤</span><span><b>我的模板</b><small><em id="template-count">1</em> 份已儲存模板</small></span><strong>›</strong></button></section>
       <div class="hint"><b>TIP</b><p>選取表格後可拖曳內部分隔線調整欄寬與列高；整張表格也能移動。</p></div>
     </aside>
@@ -66,6 +68,7 @@
     <section id="stage" class="stage">
       <div class="stage-head"><div><b>A4 畫布</b><span id="page-size">210 × 297 mm · 直向</span></div><div class="mobile-stage-actions"><button id="mobile-templates">模板</button><button id="mobile-tools">工具</button></div><p><i></i> 網格間距 16px · <span id="snap-status">吸附中</span></p></div>
       <div id="page-shell" class="page-shell"><div id="page" class="page show-grid"><div class="safe-area"></div></div></div>
+      <div class="page-navigation"><button id="previous-page" aria-label="上一頁">‹</button><span id="page-indicator">第 1 / 1 頁</span><button id="next-page" aria-label="下一頁">›</button></div>
       <div class="zoom"><button id="zoom-out" aria-label="縮小">−</button><span id="zoom-value">72%</span><button id="zoom-in" aria-label="放大">＋</button></div>
     </section>
 
@@ -83,7 +86,15 @@
           <span class="label">表格列數與欄數</span>
           <div class="property-grid"><label><span>列數</span><div class="number"><input id="selected-table-rows" type="number" min="1" max="12"><small>列</small></div></label><label><span>欄數</span><div class="number"><input id="selected-table-cols" type="number" min="1" max="8"><small>欄</small></div></label></div>
           <button id="apply-table-size" type="button">套用列數與欄數</button>
-          <p>調整後會保留仍在範圍內的文字與圖片。</p>
+          <div class="table-action-grid"><button id="add-table-row" type="button">下方加列</button><button id="add-table-col" type="button">右側加欄</button><button id="delete-table-row" type="button">刪除此列</button><button id="delete-table-col" type="button">刪除此欄</button><button id="merge-cell-right" type="button">合併右格</button><button id="merge-cell-down" type="button">合併下格</button><button id="split-cell" type="button">拆分儲存格</button></div>
+          <p>先點選表格中的儲存格，再進行增刪、合併或拆分。</p>
+        </div>
+        <div id="image-properties" class="image-properties" hidden>
+          <span class="label">圖片顯示</span>
+          <label><span>縮放方式</span><select id="image-fit"><option value="contain">完整顯示</option><option value="cover">裁切填滿</option></select></label>
+          <div class="property-grid"><label><span>水平焦點</span><div class="number"><input id="image-position-x" type="range" min="0" max="100"><small>%</small></div></label><label><span>垂直焦點</span><div class="number"><input id="image-position-y" type="range" min="0" max="100"><small>%</small></div></label></div>
+          <label><span>圖層方式</span><select id="image-wrap"><option value="front">浮於文字上方</option><option value="behind">置於文字下方</option></select></label>
+          <p>「裁切填滿」可調整焦點，決定保留哪個區域。</p>
         </div>
         <hr>
         <div><span class="label">位置與尺寸</span><div class="geometry"><label>X<input id="pos-x" type="number"></label><label>Y<input id="pos-y" type="number"></label><label>W<input id="width" type="number"></label><label>H<input id="height" type="number"></label></div></div>
@@ -93,7 +104,7 @@
     </aside>
     <div id="toast" class="toast" hidden><span>✓</span><b></b></div>
   </main>
-  <script src="docx-builder.js?v=11"></script>
-  <script src="app.js?v=11"></script>
+  <script src="docx-builder.js?v=12"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>
