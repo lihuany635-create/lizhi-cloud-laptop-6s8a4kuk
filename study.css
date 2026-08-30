@@ -5,9 +5,13 @@
 }
 
 .route-a4 .main {
-  height: calc(100vh - 76px);
+  height: 100vh;
   padding: 0;
   overflow: hidden;
+}
+
+.route-a4 .topbar {
+  display: none;
 }
 
 .a4-embedded {
@@ -73,6 +77,10 @@
   .route-a4 .main {
     height: calc(100dvh - 68px);
     padding: 0;
+  }
+
+  .route-a4 .main {
+    height: 100dvh;
   }
 
   .study-embedded-toolbar {
