@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>紙上格局｜A4 網格文件編輯器</title>
   <meta name="description" content="可拖曳固定文字框的 A4 網格編輯器，支援 Word 與 PDF 匯出。">
-  <link rel="stylesheet" href="styles.css?v=12">
+  <link rel="stylesheet" href="styles.css?v=13">
 </head>
 <body>
   <main class="app">
@@ -44,7 +44,7 @@
     </section>
 
     <aside id="sidebar" class="sidebar">
-      <section class="tool-section"><p>新增</p><button id="add-text" class="add-text"><span>＋</span><b>文字框</b><small>固定位置輸入</small></button><button id="add-image" class="add-text add-image"><span>▧</span><b>插入圖片</b><small>可拖曳、縮放與匯出</small></button><input id="image-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden><div class="table-create"><div class="table-size-row"><label>列<input id="table-rows" type="number" min="1" max="12" value="3"></label><label>欄<input id="table-cols" type="number" min="1" max="8" value="3"></label></div><button id="add-cell" class="add-text add-cell"><span>▦</span><b>插入表格</b><small>每格可輸入，整張可移動</small></button></div></section>
+      <section class="tool-section"><p>新增</p><button id="add-text" class="add-text"><span>＋</span><b>文字框</b><small>固定位置輸入</small></button><button id="add-image" class="add-text add-image"><span>▧</span><b>插入圖片</b><small>可拖曳、縮放與匯出</small></button><input id="image-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden><button id="open-batch-photo" class="add-text batch-photo-launch"><span>▦</span><b>批次照片</b><small>只放進模板的大格</small></button><div class="table-create"><div class="table-size-row"><label>列<input id="table-rows" type="number" min="1" max="12" value="3"></label><label>欄<input id="table-cols" type="number" min="1" max="8" value="3"></label></div><button id="add-cell" class="add-text add-cell"><span>▦</span><b>插入表格</b><small>每格可輸入，整張可移動</small></button></div></section>
       <section class="tool-section"><p>物件</p><button id="duplicate" class="tool-row"><span>▣</span><span>建立副本</span><kbd>⌘D</kbd></button><button id="delete" class="tool-row danger"><span>♲</span><span>刪除物件</span><kbd>⌫</kbd></button></section>
       <section class="tool-section"><p>畫布</p><button id="toggle-orientation" class="tool-row"><span>↻</span><span id="orientation-label">切換橫向</span><kbd id="orientation-status">直向</kbd></button><button id="toggle-grid" class="tool-row"><span>▦</span><span>顯示網格</span><i class="active"></i></button><button id="toggle-snap" class="tool-row"><span>∩</span><span>吸附網格</span><i class="active"></i></button></section>
       <section class="tool-section page-settings"><p>頁首頁尾</p><label><span>頁首文字</span><input id="header-text" placeholder="例如：公司名稱"></label><label><span>頁尾文字</span><input id="footer-text" placeholder="例如：機密文件"></label><label class="page-number-row"><input id="show-page-number" type="checkbox" checked><span>顯示頁碼</span><select id="page-number-align" aria-label="頁碼位置"><option value="right">靠右</option><option value="center">置中</option><option value="left">靠左</option></select></label></section>
@@ -64,6 +64,18 @@
       <div id="template-empty" class="template-empty" hidden><span>▤</span><b>還沒有自訂模板</b><p>將常用版面儲存起來，下次即可快速複製。</p></div>
     </aside>
     <div id="template-scrim" class="template-scrim" hidden></div>
+
+    <div id="batch-photo-modal" class="batch-photo-modal" hidden>
+      <section class="batch-photo-card" role="dialog" aria-modal="true" aria-labelledby="batch-photo-title">
+        <header><div><p>PHOTO TABLE</p><h2 id="batch-photo-title">批次放入照片</h2></div><button id="close-batch-photo" aria-label="關閉批次照片視窗">×</button></header>
+        <div class="batch-target"><span>放入位置</span><b id="batch-target-name">目前頁面的模板表格</b><small>只會把照片放進較高的大格；窄格、文字與表格尺寸都不會更動。</small></div>
+        <label class="batch-dropzone" for="batch-photo-file"><span>＋</span><b>選擇多張照片</b><small>照片會完整等比例縮放，不裁切、不拉伸</small></label>
+        <input id="batch-photo-file" type="file" accept="image/*" multiple hidden>
+        <div id="batch-photo-summary" class="batch-photo-summary">尚未選擇照片</div>
+        <div id="batch-photo-preview" class="batch-photo-preview"></div>
+        <footer><button id="cancel-batch-photo">取消</button><button id="place-batch-photo" disabled>放入大格</button></footer>
+      </section>
+    </div>
 
     <section id="stage" class="stage">
       <div class="stage-head"><div><b>A4 畫布</b><span id="page-size">210 × 297 mm · 直向</span></div><div class="mobile-stage-actions"><button id="mobile-templates">模板</button><button id="mobile-tools">工具</button></div><p><i></i> 網格間距 16px · <span id="snap-status">吸附中</span></p></div>
@@ -87,6 +99,7 @@
           <div class="property-grid"><label><span>列數</span><div class="number"><input id="selected-table-rows" type="number" min="1" max="12"><small>列</small></div></label><label><span>欄數</span><div class="number"><input id="selected-table-cols" type="number" min="1" max="8"><small>欄</small></div></label></div>
           <button id="apply-table-size" type="button">套用列數與欄數</button>
           <div class="table-action-grid"><button id="add-table-row" type="button">下方加列</button><button id="add-table-col" type="button">右側加欄</button><button id="delete-table-row" type="button">刪除此列</button><button id="delete-table-col" type="button">刪除此欄</button><button id="merge-cell-right" type="button">合併右格</button><button id="merge-cell-down" type="button">合併下格</button><button id="split-cell" type="button">拆分儲存格</button></div>
+          <button id="mark-photo-table" class="mark-photo-table" type="button">設為模板照片表格</button>
           <p>先點選表格中的儲存格，再進行增刪、合併或拆分。</p>
         </div>
         <div id="image-properties" class="image-properties" hidden>
@@ -104,7 +117,7 @@
     </aside>
     <div id="toast" class="toast" hidden><span>✓</span><b></b></div>
   </main>
-  <script src="docx-builder.js?v=12"></script>
-  <script src="app.js?v=12"></script>
+  <script src="docx-builder.js?v=13"></script>
+  <script src="app.js?v=13"></script>
 </body>
 </html>
