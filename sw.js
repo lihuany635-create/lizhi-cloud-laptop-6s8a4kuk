@@ -1,5 +1,5 @@
-const CACHE="lizhi-cloud-v14";
-const FILES=["","index.html","styles.css?v=14","theme.css?v=14","study.css?v=14","chat.css?v=14","app.js?v=14","manifest.webmanifest","media-manifest.json","a4-editor/?v=14","a4-editor/index.html","a4-editor/styles.css?v=14","a4-editor/app.js?v=14","a4-editor/docx-builder.js?v=14"].map(file=>new URL(file,self.registration.scope).href);
+const CACHE="lizhi-cloud-v15";
+const FILES=["","index.html","styles.css?v=15","theme.css?v=15","study.css?v=15","chat.css?v=15","app.js?v=15","manifest.webmanifest","media-manifest.json","a4-editor/?v=14","a4-editor/index.html","a4-editor/styles.css?v=14","a4-editor/app.js?v=14","a4-editor/docx-builder.js?v=14"].map(file=>new URL(file,self.registration.scope).href);
 self.addEventListener("install",event=>{
   self.skipWaiting();
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)));

@@ -1,6 +1,7 @@
 const DB_NAME="lizhi-local-cloud";
 const DB_VERSION=1;
 const IS_CLOUD_SITE=location.hostname.endsWith("github.io")||new URLSearchParams(location.search).has("cloud");
+const CLOUD_APP_URL="https://lihuany635-create.github.io/lizhi-cloud-laptop-6s8a4kuk/";
 const RELEASE_BASE="https://github.com/lihuany635-create/lizhi-cloud-laptop-6s8a4kuk/releases/download/media-2026-08-23/";
 const queryParams=new URLSearchParams(location.search);
 const OPEN_ROUTES=["home","knowledge","media","chat","study","a4","trash","settings"];
@@ -28,7 +29,7 @@ const validRoom=value=>/^[A-Za-z0-9_-]{16,80}$/.test(value||"");
 const chatTime=value=>new Intl.DateTimeFormat("zh-TW",{hour:"2-digit",minute:"2-digit"}).format(new Date(value));
 function initializeChatIdentity(){const fromUrl=queryParams.get("room");chat.roomCode=validRoom(fromUrl)?fromUrl:(validRoom(localStorage.getItem(CHAT_ROOM_KEY))?localStorage.getItem(CHAT_ROOM_KEY):randomCode());localStorage.setItem(CHAT_ROOM_KEY,chat.roomCode);chat.deviceId=localStorage.getItem(CHAT_DEVICE_ID_KEY)||uid();localStorage.setItem(CHAT_DEVICE_ID_KEY,chat.deviceId);chat.deviceName=localStorage.getItem(CHAT_DEVICE_NAME_KEY)||(/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)?"我的手機":"我的電腦");try{chat.messages=JSON.parse(localStorage.getItem(CHAT_HISTORY_PREFIX+chat.roomCode)||"[]").slice(-80);}catch{chat.messages=[];}}
 function saveChatHistory(){try{localStorage.setItem(CHAT_HISTORY_PREFIX+chat.roomCode,JSON.stringify(chat.messages.slice(-80)));}catch{toast("本機對話儲存空間不足");}}
-function chatInviteUrl(){const url=new URL(location.href);url.search="";url.hash="";url.searchParams.set("open","chat");url.searchParams.set("room",chat.roomCode);return url.href;}
+function chatInviteUrl(){const url=new URL(IS_CLOUD_SITE?location.href:CLOUD_APP_URL);url.search="";url.hash="";url.searchParams.set("open","chat");url.searchParams.set("room",chat.roomCode);return url.href;}
 async function chatPeerId(){const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(chat.roomCode));return "lizhi-"+[...new Uint8Array(digest)].slice(0,16).map(byte=>byte.toString(16).padStart(2,"0")).join("");}
 function addChatMessage(message){if(!message?.id||chat.messages.some(item=>item.id===message.id))return;chat.messages=[...chat.messages,message].slice(-80);saveChatHistory();if(state.route==="chat"){render();requestAnimationFrame(()=>document.querySelector(".chat-messages")?.scrollTo({top:999999,behavior:"smooth"}));}}
 function updateChatStatus(status){chat.status=status;if(state.route==="chat")render();}
