@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "checkedAt": "2026-09-06T01:16:43.130Z",
+  "schedule": "21:20",
+  "timeZone": "Asia/Taipei",
+  "lastSuccessAt": "2026-09-05T15:10:51Z",
+  "pendingCount": 0,
+  "status": "success",
+  "error": null,
+  "cloudCount": 36,
+  "message": "已驗證 36 個雲端檔案，未發現待上傳影音"
+}
