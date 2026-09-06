@@ -53,27 +53,10 @@ function wav() {
   assert(savedTime>=22);
   assert(await page.locator('audio').first().evaluate((el,t)=>Math.abs(el.currentTime-t)<1,savedTime));
   console.log('PASS: menu/search/player identity, search focus, favorites, iframe state and playback resume');
-  // Offline queuing and acknowledgments exercise application handlers with a simulated transport.
-  await page.goto(base+'/?cloud=1&open=chat&room=RegressionTestRoom123456');
+  // Chat transport is covered by verify-cloud-chat.cjs. Keep layout checks isolated.
+  await context.route('https://dtgtkrlzufylyvcbgggw.supabase.co/rest/v1/**',r=>r.fulfill({contentType:'application/json',body:'[]'}));
+  await page.goto(base+'/?cloud=1&open=chat');
   await page.waitForSelector('.chat-compose textarea');
-  await page.locator('.chat-compose textarea').fill('待傳文字'); await page.waitForTimeout(950);
-  assert.equal(await page.locator('.chat-compose textarea').inputValue(),'');
-  assert(await page.getByText('待傳送／等待接收確認',{exact:true}).count()>0);
-  await page.reload(); await page.waitForSelector('.chat-message');
-  assert(await page.getByText('待傳文字',{exact:true}).count()>0);
-  await page.locator('.chat-compose textarea').evaluate(el=>el.dispatchEvent(new CompositionEvent('compositionstart',{bubbles:true})));
-  await page.locator('.chat-compose textarea').fill('中文選字中'); await page.waitForTimeout(950);
-  assert.equal(await page.locator('.chat-compose textarea').inputValue(),'中文選字中');
-  await page.evaluate(()=>{receiveChatPacket({id:'remote-1',deviceId:'remote',deviceName:'test',createdAt:new Date().toISOString(),content:'遠端訊息'}, {open:true,send(){}},'test');});
-  assert.equal(await page.locator('.chat-compose textarea').inputValue(),'中文選字中');
-  await page.evaluate(()=>{window.packetCount=0;const connection={open:true,send(packet){window.packetCount++;receiveChatPacket({protocol:'lizhi-chat-v2',kind:'ack',id:packet.id,recipientId:'remote'},connection,'test');}};chat.connections.set('test',connection);flushChatOutbox();});
-  assert(await page.getByText('對方裝置已收到',{exact:true}).count()>0);
-  assert.equal(await page.evaluate(()=>chat.outbox.length),0);
-  await page.evaluate(()=>receiveChatPacket({id:'remote-1',deviceId:'remote',createdAt:new Date().toISOString(),content:'遠端訊息'},{open:true,send(){}},'test'));
-  assert.equal(await page.getByText('遠端訊息',{exact:true}).count(),1);
-  await page.reload(); await page.waitForSelector('.chat-compose textarea');
-  assert.equal(await page.locator('.chat-compose textarea').inputValue(),'中文選字中');
-  console.log('PASS: durable queue, remote acknowledgment, duplicate suppression, draft persistence and IME');
   for(const viewport of [{width:390,height:844},{width:1024,height:600}]) {
     await page.setViewportSize(viewport);
     assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));

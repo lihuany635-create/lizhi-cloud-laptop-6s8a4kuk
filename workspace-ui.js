@@ -79,38 +79,24 @@ function updateChatPanel(panel) {
     const input = panel.querySelector('textarea');
     input.addEventListener('compositionstart', () => { chat.composing = true; clearTimeout(chat.autoSendTimer); });
     input.addEventListener('compositionend', () => { chat.composing = false; scheduleChatAutoSend(input.value); });
-    const pairing = document.createElement('details'); pairing.className='chat-pairing';
-    pairing.innerHTML = `<summary>配對／確認兩台是否同一房間（版本 17）</summary><p>第一次請在手機開啟筆電的「複製連線網址」。兩邊的配對識別必須相同。</p><p>此房間識別：<strong>${escapeHtml(chat.roomCode.slice(0,8))}</strong></p><label>完整配對碼<input readonly aria-label="本機完整配對碼" value="${escapeHtml(chat.roomCode)}"></label><p>也可把另一台的連線網址或完整配對碼貼在下方加入。原房間的內容會保留在原房間。</p><form data-form="join-chat-room"><label>另一台的配對碼或連線網址<input name="invite" required autocomplete="off" spellcheck="false" aria-label="另一台的配對碼或連線網址"></label><button class="button" type="submit">加入同一房間</button></form><p data-pair-error role="status"></p><button class="button" type="button" data-action="retry-chat">重新連線</button></details>`;
-    panel.querySelector('.chat-share').after(pairing);
-    pairing.querySelector('form').addEventListener('submit',event=>{
-      event.preventDefault();event.stopImmediatePropagation();
-      const raw=event.target.elements.invite.value.trim();let code=raw;
-      if(/^https?:\/\//i.test(raw)) { try { const url=new URL(raw);code=url.searchParams.get('room');if(url.origin!==new URL(CLOUD_APP_URL).origin && url.origin!==location.origin)code=''; } catch {code='';} }
-      if(!validRoom(code)) { pairing.querySelector('[data-pair-error]').textContent='請貼上完整配對碼或「複製連線網址」取得的網址；一般首頁網址不含房間。';return; }
-      const url=new URL(location.href);url.searchParams.set('open','chat');url.searchParams.set('room',code);url.searchParams.set('v','17');location.assign(url.href);
-    });
   }
   const messages = panel.querySelector('.chat-messages');
   const scrollTop = messages.scrollTop;
   const atBottom = messages.scrollHeight - messages.scrollTop - messages.clientHeight < 70;
+  template.content.querySelectorAll('.chat-message.mine').forEach(el => {
+    const id = el.querySelector('[data-copy-chat]').dataset.copyChat;
+    const status = document.createElement('small'); status.className = 'delivery-state';
+    status.textContent = chat.outbox.some(m => m.id === id) ? '待上傳 · 已保存在此裝置' : '已存到雲端';
+    el.append(status);
+  });
   const markup = template.content.querySelector('.chat-messages').innerHTML;
   if(messages.innerHTML !== markup) {
     messages.innerHTML = markup;
     messages.scrollTop = atBottom ? messages.scrollHeight : scrollTop;
   }
-  messages.querySelectorAll('.chat-message.mine').forEach(el => {
-    const id = el.querySelector('[data-copy-chat]').dataset.copyChat;
-    const message = chat.messages.find(m => m.id === id) || chat.outbox.find(m => m.id === id);
-    const status = document.createElement('small'); status.className = 'delivery-state';
-    status.textContent = chat.outbox.some(m => m.id === id) ? '待傳送／等待接收確認' : message.delivery === 'received' ? '對方裝置已收到' : '舊訊息 · 未提供接收確認';
-    el.append(status);
-  });
-  const count = [...chat.connections.values()].filter(c => c.open).length;
-  const errors = {'library':'連線元件載入失敗，請重新整理','peer-unavailable':'找不到另一台裝置，正在重連','network':'連線服務暫時無法連上','webrtc':'目前網路未能建立裝置連線'};
-  const knownPeer=[...chat.connections.values()].some(c=>c.open&&c.lizhiVersion);
-  panel.querySelector('.chat-status').textContent = (count ? `已連線 · ${count + 1} 台裝置${knownPeer?' · 已配對':' · 等待對方版本確認'}` : chat.lastError ? errors[chat.lastError]||'連線未完成，正在重試' : chat.status === 'online' ? '尚未配對 · 請在手機開啟此房間的連線網址' : '連線中 · 文字會先保存在待傳佇列') + ` · 房間 ${chat.roomCode.slice(0,8)}`;
+  panel.querySelector('.chat-status').textContent = chat.lastError || (chat.status === 'online' ? '雲端已連線 · 約每 3 秒自動同步' : '正在讀取共用對話…');
   panel.querySelector('textarea').disabled = false;
-  panel.querySelector('.chat-compose small').textContent = '貼上立即排入傳送 · 打字停頓後自動傳送 · 中文選字時暫停 · 接收確認才算送達';
+  panel.querySelector('.chat-compose small').textContent = '貼上或打字停頓後自動傳送 · 中文選字時暫停 · 只顯示最近 80 筆';
 }
 function updateMediaPanel(panel) {
   // Render all cards once; filters hide existing cards so playback and focus survive.
@@ -222,7 +208,7 @@ function renderUploads() {
   const report = uploadReport;
   const stamp = value => value ? new Date(value).toLocaleString('zh-TW',{timeZone:'Asia/Taipei',hour12:false}) : '尚無回報';
   const stale = report?.checkedAt && Date.now()-Date.parse(report.checkedAt) > 26*60*60*1000;
-  return `${head('UPLOAD STATUS','上傳狀態','這裡顯示上傳工作最近發布的回報；電腦上的即時執行狀態不會自動傳到網站。','<button class="button" data-action="refresh-upload-status">重新取得狀態</button>')}<section class="section"><p>固定時間：每天 21:20（台灣時間）· 執行電腦需開機並連網</p><p>網站影音目錄：${state.cloudMedia.length} 集</p>${report ? `<p>回報時間：${stamp(report.checkedAt)}${stale ? ' · 回報已過期，請檢查排程' : ''}</p><p>上次成功上傳：${stamp(report.lastSuccessAt)}</p><p>待上傳：${Number.isInteger(report.pendingCount) ? report.pendingCount + ' 集（截至回報時間）' : '未知，需由上傳工作掃描'}</p><p>結果：${escapeHtml(report.message)}</p><p>失敗原因：${escapeHtml(report.error || '回報中沒有錯誤')}</p>` : `<p>${escapeHtml(uploadReportError || '正在取得回報…')}</p>`}</section><section class="section"><h2>資料保存位置</h2><p>影音檔與節目清單：雲端，可跨裝置讀取。</p><p>收藏、收聽進度、傳字紀錄、知識庫筆記與上傳文件：此裝置的瀏覽器。更換裝置不會自動同步。</p></section>`;
+  return `${head('UPLOAD STATUS','上傳狀態','這裡顯示上傳工作最近發布的回報；電腦上的即時執行狀態不會自動傳到網站。','<button class="button" data-action="refresh-upload-status">重新取得狀態</button>')}<section class="section"><p>固定時間：每天 21:20（台灣時間）· 執行電腦需開機並連網</p><p>網站影音目錄：${state.cloudMedia.length} 集</p>${report ? `<p>回報時間：${stamp(report.checkedAt)}${stale ? ' · 回報已過期，請檢查排程' : ''}</p><p>上次成功上傳：${stamp(report.lastSuccessAt)}</p><p>待上傳：${Number.isInteger(report.pendingCount) ? report.pendingCount + ' 集（截至回報時間）' : '未知，需由上傳工作掃描'}</p><p>結果：${escapeHtml(report.message)}</p><p>失敗原因：${escapeHtml(report.error || '回報中沒有錯誤')}</p>` : `<p>${escapeHtml(uploadReportError || '正在取得回報…')}</p>`}</section><section class="section"><h2>資料保存位置</h2><p>影音檔與節目清單：雲端，可跨裝置讀取。</p><p>共用對話：雲端，自動跨裝置同步，所有訪客可讀。</p><p>收藏、收聽進度、知識庫筆記與上傳文件：此裝置的瀏覽器。更換裝置不會自動同步。</p></section>`;
 }
 function installWorkspaceEvents() {
   app.addEventListener('click', event => {

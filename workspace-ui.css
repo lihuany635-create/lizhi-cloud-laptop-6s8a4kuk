@@ -19,6 +19,8 @@
 .chat-pairing input{width:100%;min-width:0;font-size:16px}
 .chat-pairing p{line-height:1.6}
 .chat-status{max-width:100%;overflow-wrap:anywhere}
+.chat-public-notice{padding:10px 14px;margin-bottom:12px;background:#fff3d9;border:1px solid #c6a77c;border-radius:10px;font-size:12px}
+.chat-public-notice p{margin:4px 0 0;line-height:1.6}
 .autoplay-option{display:flex;align-items:center;gap:6px;font-size:13px}
 .listening-progress{min-height:20px}
 .chat-window{min-height:460px;height:calc(100dvh - 245px);grid-template-rows:auto minmax(120px,1fr) minmax(175px,.8fr)}
