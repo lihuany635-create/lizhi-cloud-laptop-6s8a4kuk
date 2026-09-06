@@ -50,8 +50,27 @@ function flushChatOutbox() {
 }
 function receiveChatPacket(packet, connection, connectionId) {
   if (!packet || typeof packet !== "object") return;
+  if(packet.protocol === 'lizhi-chat-v2' && packet.kind === 'hello') {
+    connection.lizhiVersion = 17;
+    if(!connection.historySent && connection.open) {
+      connection.historySent = true;
+      // History only crosses the existing private room's data channel.
+      const items = [...chat.messages, ...chat.outbox.filter(m=>!chat.messages.some(h=>h.id===m.id))].slice(-80);
+      try { connection.send({protocol:'lizhi-chat-v2',kind:'history',items}); } catch {}
+    }
+    if(state.route === 'chat') render();
+    return;
+  }
+  if(packet.protocol === 'lizhi-chat-v2' && packet.kind === 'history') {
+    if(!connection.lizhiVersion || !Array.isArray(packet.items) || packet.items.length > 80) return;
+    for(const item of packet.items) receiveChatPacket({...item,protocol:'lizhi-chat-v2',kind:'message'},connection,connectionId);
+    chat.messages.sort((a,b)=>Date.parse(a.createdAt)-Date.parse(b.createdAt));
+    saveChatHistory();
+    if(state.route === 'chat') render();
+    return;
+  }
   if (packet.kind === "ack" && packet.protocol === "lizhi-chat-v2") {
-    if (typeof packet.id !== "string" || packet.recipientId === chat.deviceId) return;
+    if (typeof packet.id !== "string" || typeof packet.recipientId !== 'string' || packet.recipientId === chat.deviceId) return;
     const pending = chat.outbox.find(m => m.id === packet.id);
     if (pending) {
       const remaining = chat.outbox.filter(m => m.id !== packet.id);
@@ -62,6 +81,8 @@ function receiveChatPacket(packet, connection, connectionId) {
       saveChatHistory();
       if(state.route === "chat") render();
     }
+    const historical = chat.messages.find(m=>m.id === packet.id && m.deviceId === chat.deviceId);
+    if(historical && historical.delivery !== 'received') { historical.delivery='received';saveChatHistory();if(state.route==='chat')render(); }
     if(chat.host) sendToConnections(packet, connectionId);
     return;
   }
@@ -69,7 +90,7 @@ function receiveChatPacket(packet, connection, connectionId) {
       typeof packet.deviceId !== "string" || !Number.isFinite(Date.parse(packet.createdAt))) return;
   if (packet.deviceId === chat.deviceId) return;
   const message = {id:packet.id, deviceId:packet.deviceId, deviceName:String(packet.deviceName || "其他裝置").slice(0,40), content:packet.content, createdAt:packet.createdAt};
-  if (!chat.received.includes(message.id)) {
+  if (!chat.received.includes(message.id) && !chat.messages.some(item=>item.id===message.id)) {
     // Do not acknowledge data which could not be saved on this device.
     const next = [...chat.messages, message].slice(-80);
     if (!writeLocalJson(CHAT_HISTORY_PREFIX + chat.roomCode, next)) return;
@@ -84,7 +105,11 @@ function receiveChatPacket(packet, connection, connectionId) {
 }
 function attachChatConnection(connection, id) {
   chat.connections.set(id, connection);
-  connection.on("open", () => { updateChatStatus("online"); flushChatOutbox(); });
+  connection.on("open", () => {
+    chat.lastError = '';
+    try { connection.send({protocol:'lizhi-chat-v2',kind:'hello',version:17}); } catch {}
+    updateChatStatus("online"); flushChatOutbox();
+  });
   connection.on("data", packet => receiveChatPacket(packet, connection, id));
   const closed = () => {
     if(chat.connections.get(id) !== connection) return;
@@ -117,14 +142,14 @@ function startChatClient() {
     attachChatConnection(connection, "host");
     setTimeout(() => { if(chat.peer === peer && !connection.open) scheduleChatReconnect(); }, 12000);
   });
-  peer.on("error", () => { if(chat.peer === peer) scheduleChatReconnect(); });
+  peer.on("error", error => { if(chat.peer === peer) {chat.lastError=error?.type||'network';scheduleChatReconnect();} });
   peer.on("disconnected", () => { if(chat.peer === peer) scheduleChatReconnect(); });
 }
 async function startReliableChat() {
   if(chat.started) return;
   chat.started = true;
   updateChatStatus("connecting");
-  if(!window.Peer) { scheduleChatReconnect(); return; }
+  if(!window.Peer) { chat.lastError='library';scheduleChatReconnect(); return; }
   chat.hostId = await chatPeerId();
   const peer = new Peer(chat.hostId, {debug:0});
   chat.peer = peer; chat.host = true;
@@ -137,7 +162,7 @@ async function startReliableChat() {
       chat.peer = null;
       peer.destroy();
       startChatClient();
-    } else scheduleChatReconnect();
+    } else { chat.lastError=error?.type||'network'; scheduleChatReconnect(); }
   });
 }
 function autoQueueChat(text, immediate = false) {

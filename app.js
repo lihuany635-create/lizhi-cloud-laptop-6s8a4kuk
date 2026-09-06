@@ -17,7 +17,7 @@ const now=()=>new Date().toISOString();
 const escapeHtml=value=>String(value??"").replace(/[&<>'"]/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"})[char]);
 const formatDate=value=>new Intl.DateTimeFormat("zh-TW",{year:"numeric",month:"short",day:"numeric"}).format(new Date(value));
 const formatBytes=bytes=>bytes>=1073741824?`${(bytes/1073741824).toFixed(2)} GB`:bytes>=1048576?`${(bytes/1048576).toFixed(1)} MB`:bytes>=1024?`${(bytes/1024).toFixed(1)} KB`:`${bytes} B`;
-function syncRouteUrl(route){const url=new URL(location.href);if(route==="home")url.searchParams.delete("open");else url.searchParams.set("open",route);if(route!=="chat")url.searchParams.delete("room");history.replaceState(null,"",url)}
+function syncRouteUrl(route){const url=new URL(location.href);if(route==="home")url.searchParams.delete("open");else url.searchParams.set("open",route);if(route!=="chat")url.searchParams.delete("room");else url.searchParams.set("room",chat.roomCode);history.replaceState(null,"",url)}
 
 const CHAT_ROOM_KEY="lizhi-realtime-room";
 const CHAT_DEVICE_ID_KEY="lizhi-realtime-device-id";
@@ -29,7 +29,7 @@ const validRoom=value=>/^[A-Za-z0-9_-]{16,80}$/.test(value||"");
 const chatTime=value=>new Intl.DateTimeFormat("zh-TW",{hour:"2-digit",minute:"2-digit"}).format(new Date(value));
 function initializeChatIdentity(){const fromUrl=queryParams.get("room");chat.roomCode=validRoom(fromUrl)?fromUrl:(validRoom(localStorage.getItem(CHAT_ROOM_KEY))?localStorage.getItem(CHAT_ROOM_KEY):randomCode());localStorage.setItem(CHAT_ROOM_KEY,chat.roomCode);chat.deviceId=localStorage.getItem(CHAT_DEVICE_ID_KEY)||uid();localStorage.setItem(CHAT_DEVICE_ID_KEY,chat.deviceId);chat.deviceName=localStorage.getItem(CHAT_DEVICE_NAME_KEY)||(/Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)?"我的手機":"我的電腦");try{chat.messages=JSON.parse(localStorage.getItem(CHAT_HISTORY_PREFIX+chat.roomCode)||"[]").slice(-80);}catch{chat.messages=[];}}
 function saveChatHistory(){try{localStorage.setItem(CHAT_HISTORY_PREFIX+chat.roomCode,JSON.stringify(chat.messages.slice(-80)));}catch{toast("本機對話儲存空間不足");}}
-function chatInviteUrl(){const url=new URL(IS_CLOUD_SITE?location.href:CLOUD_APP_URL);url.search="";url.hash="";url.searchParams.set("open","chat");url.searchParams.set("room",chat.roomCode);return url.href;}
+function chatInviteUrl(){const url=new URL(IS_CLOUD_SITE?location.href:CLOUD_APP_URL);url.search="";url.hash="";url.searchParams.set("open","chat");url.searchParams.set("room",chat.roomCode);url.searchParams.set("v","17");return url.href;}
 async function chatPeerId(){const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(chat.roomCode));return "lizhi-"+[...new Uint8Array(digest)].slice(0,16).map(byte=>byte.toString(16).padStart(2,"0")).join("");}
 function addChatMessage(message){if(!message?.id||chat.messages.some(item=>item.id===message.id))return;chat.messages=[...chat.messages,message].slice(-80);saveChatHistory();if(state.route==="chat")render();}
 function updateChatStatus(status){chat.status=status;if(state.route==="chat")render();}

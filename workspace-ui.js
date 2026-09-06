@@ -79,6 +79,16 @@ function updateChatPanel(panel) {
     const input = panel.querySelector('textarea');
     input.addEventListener('compositionstart', () => { chat.composing = true; clearTimeout(chat.autoSendTimer); });
     input.addEventListener('compositionend', () => { chat.composing = false; scheduleChatAutoSend(input.value); });
+    const pairing = document.createElement('details'); pairing.className='chat-pairing';
+    pairing.innerHTML = `<summary>配對／確認兩台是否同一房間（版本 17）</summary><p>第一次請在手機開啟筆電的「複製連線網址」。兩邊的配對識別必須相同。</p><p>此房間識別：<strong>${escapeHtml(chat.roomCode.slice(0,8))}</strong></p><label>完整配對碼<input readonly aria-label="本機完整配對碼" value="${escapeHtml(chat.roomCode)}"></label><p>也可把另一台的連線網址或完整配對碼貼在下方加入。原房間的內容會保留在原房間。</p><form data-form="join-chat-room"><label>另一台的配對碼或連線網址<input name="invite" required autocomplete="off" spellcheck="false" aria-label="另一台的配對碼或連線網址"></label><button class="button" type="submit">加入同一房間</button></form><p data-pair-error role="status"></p><button class="button" type="button" data-action="retry-chat">重新連線</button></details>`;
+    panel.querySelector('.chat-share').after(pairing);
+    pairing.querySelector('form').addEventListener('submit',event=>{
+      event.preventDefault();event.stopImmediatePropagation();
+      const raw=event.target.elements.invite.value.trim();let code=raw;
+      if(/^https?:\/\//i.test(raw)) { try { const url=new URL(raw);code=url.searchParams.get('room');if(url.origin!==new URL(CLOUD_APP_URL).origin && url.origin!==location.origin)code=''; } catch {code='';} }
+      if(!validRoom(code)) { pairing.querySelector('[data-pair-error]').textContent='請貼上完整配對碼或「複製連線網址」取得的網址；一般首頁網址不含房間。';return; }
+      const url=new URL(location.href);url.searchParams.set('open','chat');url.searchParams.set('room',code);url.searchParams.set('v','17');location.assign(url.href);
+    });
   }
   const messages = panel.querySelector('.chat-messages');
   const scrollTop = messages.scrollTop;
@@ -96,7 +106,9 @@ function updateChatPanel(panel) {
     el.append(status);
   });
   const count = [...chat.connections.values()].filter(c => c.open).length;
-  panel.querySelector('.chat-status').textContent = count ? `已連線 · ${count + 1} 台裝置` : chat.status === 'online' ? '等待另一台裝置 · 文字會先保存在待傳佇列' : '連線中 · 文字會先保存在待傳佇列';
+  const errors = {'library':'連線元件載入失敗，請重新整理','peer-unavailable':'找不到另一台裝置，正在重連','network':'連線服務暫時無法連上','webrtc':'目前網路未能建立裝置連線'};
+  const knownPeer=[...chat.connections.values()].some(c=>c.open&&c.lizhiVersion);
+  panel.querySelector('.chat-status').textContent = (count ? `已連線 · ${count + 1} 台裝置${knownPeer?' · 已配對':' · 等待對方版本確認'}` : chat.lastError ? errors[chat.lastError]||'連線未完成，正在重試' : chat.status === 'online' ? '尚未配對 · 請在手機開啟此房間的連線網址' : '連線中 · 文字會先保存在待傳佇列') + ` · 房間 ${chat.roomCode.slice(0,8)}`;
   panel.querySelector('textarea').disabled = false;
   panel.querySelector('.chat-compose small').textContent = '貼上立即排入傳送 · 打字停頓後自動傳送 · 中文選字時暫停 · 接收確認才算送達';
 }
@@ -217,6 +229,7 @@ function installWorkspaceEvents() {
     const button = event.target.closest('button'); if(!button) return;
     const action = button.dataset.action;
     if(action === 'toggle-menu') { event.stopImmediatePropagation(); state.sidebar = !state.sidebar; setMenuState(); return; }
+    if(action === 'retry-chat') scheduleChatReconnect();
     if(button.dataset.favorite && state.records.find(r=>r.id === button.dataset.favorite)?.cloud) {
       event.stopImmediatePropagation(); const row = state.records.find(r=>r.id === button.dataset.favorite);
       const pref = prefsFor(row); pref.favorite = !pref.favorite; persistMediaPrefs(); render();

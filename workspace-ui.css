@@ -12,6 +12,13 @@
 .playback-dock span{flex:1;min-width:0;overflow-wrap:anywhere}
 .playback-dock button{flex-shrink:0}
 .delivery-state{display:block;margin-top:6px;color:#526751}
+.chat-pairing{margin:8px 0 12px;padding:9px 12px;border:1px solid var(--line);border-radius:8px;background:#fffaf1;font-size:13px}
+.chat-pairing summary{cursor:pointer;font-weight:600}
+.chat-pairing form{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+.chat-pairing label{display:grid;gap:5px;flex:1;min-width:0}
+.chat-pairing input{width:100%;min-width:0;font-size:16px}
+.chat-pairing p{line-height:1.6}
+.chat-status{max-width:100%;overflow-wrap:anywhere}
 .autoplay-option{display:flex;align-items:center;gap:6px;font-size:13px}
 .listening-progress{min-height:20px}
 .chat-window{min-height:460px;height:calc(100dvh - 245px);grid-template-rows:auto minmax(120px,1fr) minmax(175px,.8fr)}
