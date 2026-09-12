@@ -1,12 +1,13 @@
 {
   "version": 1,
-  "checkedAt": "2026-09-10T13:21:13.427Z",
+  "checkedAt": "2026-09-12T13:23:57.107Z",
   "schedule": "21:20",
   "timeZone": "Asia/Taipei",
-  "lastSuccessAt": "2026-09-05T15:10:51Z",
+  "lastSuccessAt": "2026-09-12T13:23:29Z",
   "pendingCount": 0,
   "status": "success",
   "error": null,
-  "cloudCount": 36,
-  "message": "已驗證 36 個雲端檔案，未發現待上傳影音"
+  "cloudCount": 41,
+  "message": "已核對 41 個雲端資產，本次新增 5 集，未發現待上傳影音。另第 3 集「高處作業墜落危害」音檔檔頭檢查異常，可能無法播放，原檔未變更。",
+  "warnings": ["e03.mp3：音檔檔頭無法解析，需確認或重新取得來源檔；資產大小與雜湊一致不代表可正常播放。"]
 }
