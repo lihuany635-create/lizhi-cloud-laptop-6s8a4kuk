@@ -96,5 +96,11 @@ restoreInput.addEventListener("change",async()=>{const file=restoreInput.files[0
 initializeChatIdentity();
 initializeDelivery();
 installWorkspaceEvents();
+const knowledgeService=new KnowledgeService({
+  local:new LocalKnowledgeAdapter({records:()=>state.records}),
+  vault:new VaultKnowledgeAdapter({enabled:!IS_CLOUD_SITE})
+});
+KnowledgeHome.configure({service:knowledgeService,rerender:()=>{if(state.route==="knowledge")render();}});
+KnowledgeHome.installEvents(app);
 if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js").then(registration=>registration.update()).catch(()=>{});
 seed().then(loadCloudMedia).then(refresh).catch(error=>{app.innerHTML=`<div class="empty">無法開啟資料庫：${escapeHtml(error.message)}</div>`;});

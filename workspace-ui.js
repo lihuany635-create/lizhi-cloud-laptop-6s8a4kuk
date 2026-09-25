@@ -52,7 +52,7 @@ function renderWorkspace() {
       }
     }
   } else {
-    const renderers = {home:renderHome,knowledge:renderKnowledge,trash:renderTrash,settings:renderSettings,uploads:renderUploads};
+    const renderers = {home:renderHome,knowledge:KnowledgeHome.render,trash:renderTrash,settings:renderSettings,uploads:renderUploads};
     const focused = document.activeElement;
     const searchFocused = panel.contains(focused) && focused.matches('[data-search]');
     const selection = searchFocused ? [focused.selectionStart, focused.selectionEnd] : null;
