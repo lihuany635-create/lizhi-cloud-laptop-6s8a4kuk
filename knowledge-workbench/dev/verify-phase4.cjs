@@ -49,6 +49,8 @@ async function dbSnapshot(page) {
     await page.locator('[data-kw="folder-create"]').click();
     await page.waitForFunction(() => document.querySelector('[data-kw="picker-crumb"]').textContent.includes('測試'));
     await page.locator('[data-kw="folder-confirm"]').click();
+    await page.locator('[data-kw="template-dialog"]').waitFor({state: 'visible'});
+    await page.locator('[data-kw="template-confirm"]').click();
     await page.waitForURL(/draft=/);
     const draftId = new URL(page.url()).searchParams.get('draft');
     await page.locator('[data-kw="title"]').fill('Phase 4 正式草稿');

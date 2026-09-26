@@ -2,6 +2,9 @@ import {DraftController} from '../core/draft-controller.js';
 import {DB_NAME, DB_VERSION} from '../core/draft-db.js';
 import {ensureFolder, ensureFoldersFromDrafts, getFolderTree, describeFolderPath} from '../core/folder-catalog-store.js';
 import {getAncestorPaths, getFolderLookupKey, validateFolderPath} from '../core/folder-model.js';
+import {getTemplate, listTemplates, loadBuiltinTemplates} from '../core/template-registry.js';
+import {createDefaultFields} from '../core/template-values.js';
+import {readTemplateFields, renderTemplateForm, renderUnknownTemplate, showFieldErrors} from '../ui/template-form.js';
 
 const MANIFEST_URL = 'https://raw.githubusercontent.com/lihuany635-create/lizhi-cloud-laptop-6s8a4kuk/knowledge-data/manifest.json';
 
@@ -22,7 +25,8 @@ export function mountKnowledgeWorkbench(panel) {
         <div class="kw-fields">
           <label>標題<input data-kw="title" autocomplete="off" placeholder="輸入標題"></label>
           <div class="kw-location"><span>儲存位置</span><button class="button" type="button" data-kw="choose-folder">選擇儲存位置</button><small data-kw="folder-crumb">尚未選擇</small></div>
-          <label>內容<textarea data-kw="body" rows="9" placeholder="記下你的想法、資料或施工經驗"></textarea></label>
+          <div class="kw-template-meta" data-kw="template-meta">尚未選擇模板</div>
+          <div class="kw-template-form" data-kw="template-form"></div>
           <label>標籤（逗號分隔）<input data-kw="tags" autocomplete="off" placeholder="例如：RC, 品質"></label>
           <label>圖片／附件暫存<input data-kw="attachment" type="file"></label>
           <ul data-kw="attachments" class="kw-attachments"></ul>
@@ -31,16 +35,18 @@ export function mountKnowledgeWorkbench(panel) {
         <small data-kw="revision" class="kw-revision">—</small>
       </div>
     </section>
-    <section class="section kw-future"><div class="section-head"><h2>正式資料與後續能力</h2></div><p>共用知識資料層已建立，但此階段沒有安全寫入服務。下列功能尚未啟用：</p><div class="meta"><span class="chip">正式送出 · 未啟用</span><span class="chip">模板 · 未啟用</span><span class="chip">關聯與搜尋 · 未啟用</span><span class="chip">Obsidian 備份 · 未啟用</span></div><div class="actions"><button class="button" data-kw="manifest">唯讀檢查共用資料層</button><span data-kw="manifest-status" class="kw-manifest-status">不影響本機草稿</span></div></section>
-    <dialog class="kw-folder-dialog" data-kw="folder-dialog"><div class="kw-folder-dialog-body"><div class="section-head"><h2>選擇知識位置</h2><button class="button" type="button" data-kw="folder-cancel">關閉</button></div><p class="kw-note">選擇根目錄或資料夾。這只決定本機草稿的位置，尚未跨裝置同步。</p><div data-kw="picker-tree" class="kw-folder-tree"></div><p data-kw="picker-crumb" class="kw-folder-crumb">全部知識 &gt; 根目錄</p><label class="kw-create-folder">在目前位置新增資料夾<input data-kw="folder-name" placeholder="例如：工程/RC/施工問題"></label><button class="button" type="button" data-kw="folder-create">＋ 新增資料夾</button><p data-kw="folder-error" class="kw-folder-error" role="alert"></p><div class="actions"><button class="button primary" type="button" data-kw="folder-confirm">選用此位置</button></div></div></dialog>`;
+    <section class="section kw-future"><div class="section-head"><h2>正式資料與後續能力</h2></div><p>共用知識資料層已建立，但此階段沒有安全寫入服務。下列功能尚未啟用：</p><div class="meta"><span class="chip">正式送出 · 未啟用</span><span class="chip">模板表單 · 本機可用</span><span class="chip">關聯與搜尋 · 未啟用</span><span class="chip">Obsidian 備份 · 未啟用</span></div><div class="actions"><button class="button" data-kw="manifest">唯讀檢查共用資料層</button><span data-kw="manifest-status" class="kw-manifest-status">不影響本機草稿</span></div></section>
+    <dialog class="kw-folder-dialog" data-kw="folder-dialog"><div class="kw-folder-dialog-body"><div class="section-head"><h2>選擇知識位置</h2><button class="button" type="button" data-kw="folder-cancel">關閉</button></div><p class="kw-note">選擇根目錄或資料夾。這只決定本機草稿的位置，尚未跨裝置同步。</p><div data-kw="picker-tree" class="kw-folder-tree"></div><p data-kw="picker-crumb" class="kw-folder-crumb">全部知識 &gt; 根目錄</p><label class="kw-create-folder">在目前位置新增資料夾<input data-kw="folder-name" placeholder="例如：工程/RC/施工問題"></label><button class="button" type="button" data-kw="folder-create">＋ 新增資料夾</button><p data-kw="folder-error" class="kw-folder-error" role="alert"></p><div class="actions"><button class="button primary" type="button" data-kw="folder-confirm">選用此位置</button></div></div></dialog>
+    <dialog class="kw-folder-dialog" data-kw="template-dialog"><div class="kw-folder-dialog-body"><div class="section-head"><h2>選擇模板</h2><button class="button" type="button" data-kw="template-cancel">關閉</button></div><p class="kw-note">位置已選定；選擇模板後才建立本機草稿。</p><label class="kw-create-folder">模板<select data-kw="template-select"></select></label><p data-kw="template-description" class="kw-note"></p><p data-kw="template-error" class="kw-field-error" role="alert"></p><div class="actions"><button class="button primary" type="button" data-kw="template-confirm">建立草稿</button></div></div></dialog>`;
 
   const get = key => panel.querySelector(`[data-kw="${key}"]`);
-  const inputKeys = ['title', 'body', 'tags'];
+  const inputKeys = ['title', 'tags'];
   const controller = new DraftController({onState: renderState});
   controller.attachLifecycle();
   let browsePath = '';
   let pickerPath = '';
   let creating = false;
+  let newFolderPath = '';
   const expanded = new Set(['']);
 
   function fail(error) {
@@ -168,7 +174,11 @@ export function mountKnowledgeWorkbench(panel) {
     const valid = validateFolderPath(path).valid;
     get('choose-folder').textContent = !draft ? '選擇儲存位置' : valid ? (path ? '變更資料夾' : '根目錄 · 變更位置') : '修正資料夾位置';
     get('folder-crumb').textContent = !draft ? '尚未選擇' : valid ? describeFolderPath(path) : '位置待修正；請重新選擇資料夾';
-    get('body').value = draft?.fields?.body || '';
+    const template = draft ? getTemplate(draft.templateId, draft.templateVersion) : null;
+    get('template-meta').textContent = !draft ? '尚未選擇模板' : template ? `${template.name} · v${template.templateVersion}` : `未知模板 ${draft.templateId} v${draft.templateVersion}`;
+    if (draft && template) renderTemplateForm(get('template-form'), template, draft.fields);
+    else if (draft) renderUnknownTemplate(get('template-form'), draft);
+    else get('template-form').replaceChildren();
     get('tags').value = (draft?.tags || []).join(', ');
   }
 
@@ -206,10 +216,23 @@ export function mountKnowledgeWorkbench(panel) {
   })().catch(error => { get('folder-error').textContent = error.message; }));
   get('folder-confirm').addEventListener('click', () => void (async () => {
     if (creating) {
-      const draft = await controller.create();
-      controller.update({folderPath: pickerPath});
-      await controller.flush();
-      setDraftUrl(draft.draftId);
+      newFolderPath = pickerPath;
+      await loadBuiltinTemplates();
+      const templates = listTemplates({status: 'active'});
+      const select = get('template-select');
+      select.replaceChildren();
+      for (const template of templates) {
+        const option = document.createElement('option');
+        option.value = `${template.templateId}:${template.templateVersion}`;
+        option.textContent = `${template.name} · v${template.templateVersion}`;
+        select.append(option);
+      }
+      if (!templates.length) throw new Error('目前沒有可用模板');
+      get('template-description').textContent = templates[0].description || '';
+      get('template-error').textContent = '';
+      get('folder-dialog').close();
+      get('template-dialog').showModal();
+      return;
     } else {
       controller.update({folderPath: pickerPath});
       await controller.flush();
@@ -222,9 +245,31 @@ export function mountKnowledgeWorkbench(panel) {
     if (creating) get('title').focus();
   })().catch(fail));
 
+  get('template-select').addEventListener('change', () => {
+    const [id, version] = get('template-select').value.split(':');
+    get('template-description').textContent = getTemplate(id, Number(version))?.description || '';
+  });
+  get('template-cancel').addEventListener('click', () => get('template-dialog').close());
+  get('template-confirm').addEventListener('click', () => void (async () => {
+    const [id, version] = get('template-select').value.split(':');
+    const template = getTemplate(id, Number(version));
+    if (!template || template.status !== 'active') { get('template-error').textContent = '此模板無法使用'; return; }
+    const draft = await controller.create();
+    controller.update({folderPath: newFolderPath, templateId: template.templateId, templateVersion: template.templateVersion, fields: createDefaultFields(template)});
+    await controller.flush();
+    setDraftUrl(draft.draftId);
+    get('template-dialog').close();
+    fill(controller.current);
+    await renderAttachments();
+    await renderFolders();
+    await renderList();
+    get('title').focus();
+  })().catch(fail));
+
   function updateFromForm() {
+    const template = getTemplate(controller.current.templateId, controller.current.templateVersion);
     controller.update({title: get('title').value,
-      fields: {...controller.current.fields, body: get('body').value},
+      fields: template ? readTemplateFields(get('template-form'), template, controller.current.fields) : controller.current.fields,
       tags: get('tags').value.split(',').map(tag => tag.trim()).filter(Boolean)});
   }
   for (const key of inputKeys) {
@@ -232,6 +277,9 @@ export function mountKnowledgeWorkbench(panel) {
     get(key).addEventListener('change', updateFromForm);
     get(key).addEventListener('blur', () => void controller.flush().catch(fail));
   }
+  get('template-form').addEventListener('input', updateFromForm);
+  get('template-form').addEventListener('change', updateFromForm);
+  get('template-form').addEventListener('focusout', () => void controller.flush().catch(fail));
   get('attachment').addEventListener('change', () => void (async () => {
     const file = get('attachment').files[0];
     if (!file) return;
@@ -240,7 +288,15 @@ export function mountKnowledgeWorkbench(panel) {
     await renderAttachments();
     await renderList();
   })().catch(fail));
-  get('prepare').addEventListener('click', () => void controller.prepareSend().then(renderList).catch(fail));
+  get('prepare').addEventListener('click', () => void controller.prepareSend().then(() => {
+    showFieldErrors(get('template-form'));
+    return renderList();
+  }).catch(error => {
+    if (error.fieldErrors) {
+      showFieldErrors(get('template-form'), error.fieldErrors);
+      get('save-status').textContent = '草稿已保存；請先確認模板欄位，再準備送出';
+    } else get('save-status').textContent = error.message;
+  }));
   get('delete').addEventListener('click', () => void (async () => {
     if (!confirm('確定刪除這份本機草稿、附件和待送出工作？')) return;
     await controller.removeCurrent();
@@ -268,6 +324,7 @@ export function mountKnowledgeWorkbench(panel) {
 
   renderState({draft: null, status: 'idle', error: null});
   void (async () => {
+    await loadBuiltinTemplates();
     const bootstrap = await ensureFoldersFromDrafts(await controller.list());
     if (bootstrap.warnings.length) {
       get('folder-warnings').hidden = false;

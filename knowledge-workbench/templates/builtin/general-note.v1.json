@@ -1,0 +1,14 @@
+{
+  "templateId": "general-note",
+  "templateVersion": 1,
+  "name": "一般筆記",
+  "description": "Phase 6 驗收用基礎模板",
+  "status": "active",
+  "sections": [
+    {"sectionId": "main", "title": "內容", "fieldKeys": ["body", "sourceUrl"]}
+  ],
+  "fields": [
+    {"key": "body", "label": "內容", "type": "markdown", "required": false, "defaultValue": ""},
+    {"key": "sourceUrl", "label": "來源網址", "type": "url", "required": false, "defaultValue": ""}
+  ]
+}

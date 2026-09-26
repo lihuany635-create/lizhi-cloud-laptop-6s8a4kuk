@@ -31,5 +31,15 @@
 .kw-folder-dialog .kw-create-folder { display:grid; gap:6px; margin:14px 0 8px; font-size:13px; font-weight:700; }
 .kw-folder-dialog .kw-create-folder input { width:100%; }
 .kw-folder-dialog .kw-folder-error { min-height:1.4em; font-size:12px; }
+.route-knowledge-workbench .kw-template-meta { padding:9px 12px; border:1px solid var(--line); border-radius:8px; background:#fffaf1; font-size:13px; font-weight:700; }
+.route-knowledge-workbench .kw-template-form { min-width:0; display:grid; gap:14px; }
+.route-knowledge-workbench .kw-template-section { min-width:0; display:grid; gap:12px; padding:14px; border:1px solid var(--line); border-radius:10px; }
+.route-knowledge-workbench .kw-template-section h3 { margin:0; font-size:16px; }
+.route-knowledge-workbench .kw-template-field { min-width:0; }
+.route-knowledge-workbench .kw-template-field input,.route-knowledge-workbench .kw-template-field textarea,.route-knowledge-workbench .kw-template-field select { max-width:100%; min-width:0; }
+.route-knowledge-workbench .kw-template-field input[type=checkbox] { width:auto; justify-self:start; }
+.route-knowledge-workbench .kw-field-error,.route-knowledge-workbench .kw-template-warning { color:var(--danger); font-size:12px; }
+.route-knowledge-workbench .kw-template-unsupported { color:var(--muted); font-weight:400; }
+.route-knowledge-workbench .kw-template-raw { max-width:100%; overflow:auto; padding:12px; background:#fffaf1; border-radius:8px; font-size:12px; }
 @media(max-width:950px){.route-knowledge-workbench .kw-layout { grid-template-columns:1fr; }}
 @media(max-width:680px){.route-knowledge-workbench .kw-status-grid { grid-template-columns:1fr; }.route-knowledge-workbench .kw-fields textarea { min-height:180px; }}

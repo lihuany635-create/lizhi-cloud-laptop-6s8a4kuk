@@ -63,6 +63,8 @@ async function snapshot(page) {
     assert.deepEqual(data.catalog.folders.map(folder => folder.path), ['工程', '工程/RC', '工程/RC/施工問題']);
     const ids = data.catalog.folders.map(folder => folder.folderId);
     await page.locator('[data-kw="folder-confirm"]').click();
+    await page.locator('[data-kw="template-dialog"]').waitFor({state: 'visible'});
+    await page.locator('[data-kw="template-confirm"]').click();
     await page.waitForURL(/draft=/);
     const firstId = new URL(page.url()).searchParams.get('draft');
     await page.locator('[data-kw="title"]').fill('施工問題草稿');
@@ -81,6 +83,8 @@ async function snapshot(page) {
     assert.equal(data.catalog.folders.length, 3);
     assert.deepEqual(data.catalog.folders.map(folder => folder.folderId), ids);
     await page.locator('[data-kw="folder-confirm"]').click();
+    await page.locator('[data-kw="template-dialog"]').waitFor({state: 'visible'});
+    await page.locator('[data-kw="template-confirm"]').click();
     await page.waitForFunction(firstId => new URL(location.href).searchParams.get('draft') !== firstId && !document.querySelector('[data-kw="folder-dialog"]').open, firstId);
     assert.equal((await snapshot(page)).drafts.find(draft => draft.draftId !== firstId).folderPath, '工程/RC/施工問題');
 
@@ -120,6 +124,8 @@ async function snapshot(page) {
     await page.locator('[data-kw="folder-name"]').fill('離線/現場');
     await page.locator('[data-kw="folder-create"]').click();
     await page.locator('[data-kw="folder-confirm"]').click();
+    await page.locator('[data-kw="template-dialog"]').waitFor({state: 'visible'});
+    await page.locator('[data-kw="template-confirm"]').click();
     await page.waitForURL(/draft=/);
     assert((await snapshot(page)).catalog.folders.some(folder => folder.path === '離線/現場'));
     await context.setOffline(false);

@@ -1,6 +1,8 @@
 import {createDraft, deleteDraft, getDraft, listDrafts, saveDraft} from './draft-store.js';
 import {addBlob, listBlobs} from './blob-store.js';
 import {enqueueDraft, listOutbox} from './outbox-store.js';
+import {getTemplate, loadBuiltinTemplates} from './template-registry.js';
+import {adaptDraft, validateFields} from './template-values.js';
 
 export class DraftController {
   constructor({onState = () => {}, debounceMs = 800} = {}) {
@@ -39,12 +41,12 @@ export class DraftController {
     await this.flush();
     const draft = await getDraft(draftId);
     if (!draft) throw new Error('找不到這份本機草稿');
-    this.current = draft;
+    this.current = adaptDraft(draft);
     this.pending = false;
     this.status = 'saved';
     this.error = null;
     this.emit();
-    return draft;
+    return this.current;
   }
 
   update(patch) {
@@ -104,6 +106,22 @@ export class DraftController {
   async prepareSend() {
     await this.flush();
     if (!this.current) throw new Error('請先建立草稿');
+    if (this.current.templateId) {
+      if (this.current.templateId === 'general-note' && this.current.templateVersion === 1 && !getTemplate('general-note', 1)) await loadBuiltinTemplates();
+      const template = getTemplate(this.current.templateId, this.current.templateVersion);
+      if (!template) throw new Error('找不到這份草稿使用的模板版本，無法準備送出');
+      const validation = validateFields(template, this.current.fields);
+      if (!validation.valid) {
+        const error = new Error('請先完成或確認模板欄位');
+        error.fieldErrors = validation.errors;
+        throw error;
+      }
+      const stored = await getDraft(this.current.draftId);
+      if (stored && !stored.templateId) {
+        this.update({templateId: this.current.templateId, templateVersion: this.current.templateVersion, fields: this.current.fields});
+        await this.flush();
+      }
+    }
     const {draft, job} = await enqueueDraft(this.current.draftId);
     this.current = draft;
     this.status = 'queued';

@@ -1,4 +1,6 @@
 import {idbRequest, withTransaction} from './draft-db.js';
+import {getTemplate} from './template-registry.js';
+import {validateFields} from './template-values.js';
 
 const now = () => new Date().toISOString();
 
@@ -44,7 +46,13 @@ export async function saveDraft(snapshot) {
     await idbRequest(drafts.put(saved));
     const outbox = tx.objectStore('outbox');
     const job = await idbRequest(outbox.index('byDraftOperation').get([saved.draftId, 'upsert']));
-    if (job) await idbRequest(outbox.put({...job, payloadRevision: saved.draftRevision, updatedAt: timestamp}));
+    if (job) {
+      const template = saved.templateId ? getTemplate(saved.templateId, saved.templateVersion) : null;
+      const valid = !saved.templateId || (template && validateFields(template, saved.fields).valid);
+      await idbRequest(outbox.put({...job, payloadRevision: saved.draftRevision,
+        templateId: saved.templateId || null, templateVersion: saved.templateVersion || null,
+        status: valid ? job.status : 'needs-review', updatedAt: timestamp}));
+    }
     return saved;
   });
 }
