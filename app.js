@@ -97,10 +97,13 @@ initializeChatIdentity();
 initializeDelivery();
 installWorkspaceEvents();
 const knowledgeService=new KnowledgeService({
-  local:new LocalKnowledgeAdapter({records:()=>state.records}),
+  local:new LocalKnowledgeAdapter({records:()=>state.records,put:putRecord,afterSave:refresh}),
   vault:new VaultKnowledgeAdapter({enabled:!IS_CLOUD_SITE})
 });
 KnowledgeHome.configure({service:knowledgeService,rerender:()=>{if(state.route==="knowledge")render();}});
 KnowledgeHome.installEvents(app);
+KnowledgeEditor.configure({service:knowledgeService,rerender:()=>{if(state.route==="knowledge")render();}});
+KnowledgeEditor.installEvents(app);
+KnowledgeEditor.restore();
 if("serviceWorker" in navigator)navigator.serviceWorker.register("./sw.js").then(registration=>registration.update()).catch(()=>{});
 seed().then(loadCloudMedia).then(refresh).catch(error=>{app.innerHTML=`<div class="empty">無法開啟資料庫：${escapeHtml(error.message)}</div>`;});

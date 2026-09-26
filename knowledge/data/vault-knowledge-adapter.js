@@ -32,13 +32,39 @@
         this.request("/health"),this.request("/api/notes"),this.request("/api/workflows")
       ]);
       const workflows=new Map((workflowsPayload.workflows||[]).map(item=>[item.path,item]));
+      const notes=notesPayload.notes||[],details=new Array(notes.length);let cursor=0;
+      async function loadDetail(adapter){while(cursor<notes.length){const index=cursor++;try{details[index]=await adapter.request(`/api/note?path=${encodeURIComponent(notes[index].path)}`);}catch{details[index]=notes[index];}}}
+      await Promise.all(Array.from({length:Math.min(6,notes.length)},()=>loadDetail(this)));
       return {
         status:"online",health,
-        items:(notesPayload.notes||[]).map(note=>KnowledgeModel.fromVault({...note,...(workflows.get(note.path)||{})},workflows.has(note.path)?"workflow":"note"))
+        items:details.map(note=>KnowledgeModel.fromVault({...note,...(workflows.get(note.path)||{})},workflows.has(note.path)?"workflow":"note"))
       };
     }
 
     async get(path){return KnowledgeModel.fromVault(await this.request(`/api/note?path=${encodeURIComponent(path)}`));}
+
+    async getWorkflow(path){return this.request(`/api/workflow?path=${encodeURIComponent(path)}`);}
+
+    async serializeWorkflow(payload){
+      return this.requestJson("/api/workflow/serialize",payload);
+    }
+
+    async createWriteRequest(payload){
+      if(!this.enabled)throw new Error("目前環境未啟用 Vault 寫入");
+      return this.requestJson("/api/write-requests",payload);
+    }
+
+    async getWriteRequest(requestId){return this.request(`/api/write-requests/${encodeURIComponent(requestId)}`);}
+
+    async requestJson(path,payload){
+      const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),this.timeoutMs);
+      try{
+        const response=await fetch(this.baseUrl+path,{method:"POST",signal:controller.signal,headers:{Accept:"application/json","Content-Type":"application/json"},body:JSON.stringify(payload)});
+        const body=await response.json().catch(()=>({}));
+        if(!response.ok)throw new Error(body.detail||`Vault API ${response.status}`);
+        return body;
+      }finally{clearTimeout(timer);}
+    }
 
     async search(query,filters={}){
       if(!this.enabled)return [];

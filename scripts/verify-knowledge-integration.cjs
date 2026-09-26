@@ -14,5 +14,6 @@ assert(index.indexOf('knowledge-model.js')<index.indexOf('workspace-ui.js'),'kno
 assert(workspace.includes('knowledge:KnowledgeHome.render'),'knowledge workspace must use integration renderer');
 assert(app.includes('new LocalKnowledgeAdapter')&&app.includes('KnowledgeHome.configure'),'knowledge service must be configured');
 assert(vault.includes('/api/notes')&&vault.includes('/api/workflows')&&vault.includes('/health'),'vault adapter must use read APIs');
-assert(!vault.match(/method\s*:\s*["'](POST|PUT|PATCH|DELETE)/i),'vault adapter must remain read-only');
-console.log('PASS: Phase 16 module wiring, source boundaries and read-only Vault adapter');
+assert(vault.includes('/api/write-requests')&&vault.includes('/api/workflow/serialize'),'writes must use existing safe APIs');
+assert(!vault.includes('write-file')&&!vault.match(/\b(PUT|DELETE)\b/),'adapter must not expose direct file writes');
+console.log('PASS: Knowledge module wiring, source boundaries and safe Write Request adapter');

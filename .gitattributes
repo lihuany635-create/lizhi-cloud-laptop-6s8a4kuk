@@ -1,0 +1,2 @@
+# Preserve generated Mermaid template literals verbatim.
+knowledge/vendor/mermaid.js -whitespace

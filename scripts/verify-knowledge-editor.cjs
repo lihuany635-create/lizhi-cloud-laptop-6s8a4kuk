@@ -1,0 +1,94 @@
+const assert=require('node:assert/strict');
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+const base=process.env.TEST_BASE||'http://127.0.0.1:4180';
+
+(async()=>{
+  const browser=await chromium.launch({headless:true,channel:'chrome'});
+  const context=await browser.newContext({serviceWorkers:'block'}),page=await context.newPage(),errors=[];
+  page.on('pageerror',error=>{if(!error.message.includes("Service worker is disabled because the context is sandboxed"))errors.push(error.message);});
+  await page.goto(base+'/?open=knowledge');
+  await page.getByText(/Vault 已連線/).waitFor({timeout:10000});
+  await page.getByRole('button',{name:'＋ 新增知識'}).click();
+  await page.getByRole('dialog',{name:'知識編輯器'}).waitFor();
+  assert.equal(await page.locator('select[name="source"]').inputValue(),'vault');
+  assert.deepEqual(await page.locator('select[name="knowledgeType"] option').allTextContents(),['一般筆記','施工流程','法規整理','品質檢查','經驗紀錄','問題／解法','自訂知識']);
+  await page.locator('input[name="title"]').fill('Phase 17 預覽測試');
+  await page.locator('textarea[name="summary"]').fill('預覽摘要');
+  await page.locator('textarea[name="content"]').fill('預覽內容');
+  await page.locator('.editor-preview pre').getByText('# Phase 17 預覽測試',{exact:false}).waitFor();
+  await page.locator('select[name="knowledgeType"]').selectOption('workflow');
+  await page.locator('textarea[name="workflow.diagrams"]').fill('flowchart TD\n  A[草稿] --> B[Vault]');
+  await page.locator('[data-mermaid-preview] iframe').waitFor({timeout:30000});
+  await page.locator('select[name="knowledgeType"]').selectOption('note');
+  let dialogs=0;page.on('dialog',async dialog=>{dialogs++;dialogs===1?await dialog.dismiss():await dialog.accept();});
+  await page.getByRole('button',{name:'關閉編輯器'}).click();
+  assert.equal(await page.getByRole('dialog',{name:'知識編輯器'}).count(),1,'dismiss must preserve dirty draft');
+  await page.getByRole('button',{name:'關閉編輯器'}).click();
+  await page.getByRole('dialog',{name:'知識編輯器'}).waitFor({state:'detached'});
+
+  await page.getByRole('button',{name:'＋ 本機筆記'}).click();
+  await page.locator('input[name="title"]').fill('Phase17 Local Draft');
+  await page.locator('textarea[name="content"]').fill('Local content remains in IndexedDB.');
+  await page.getByRole('button',{name:'儲存本機筆記'}).click();
+  await page.getByRole('heading',{name:'Phase17 Local Draft'}).waitFor();
+
+  const vaultTitle=`Phase17 UI 驗收 ${Date.now()}`;
+  await page.getByRole('button',{name:'＋ 新增知識'}).click();
+  await page.locator('input[name="title"]').fill(vaultTitle);
+  await page.locator('input[name="path"]').fill(`Phase17-Acceptance/ui-${Date.now()}.md`);
+  await page.locator('textarea[name="content"]').fill('由統一編輯器建立的 Vault 筆記。');
+  await page.getByRole('button',{name:'送出安全寫入'}).click();
+  await page.getByRole('dialog',{name:'知識編輯器'}).waitFor({state:'detached',timeout:60000});
+  await page.getByRole('heading',{name:vaultTitle}).waitFor({timeout:15000});
+  await page.getByRole('heading',{name:vaultTitle}).locator('xpath=ancestor::article').getByRole('button',{name:'編輯 Vault 知識'}).click();
+  await page.locator('textarea[name="content"]').fill('由統一編輯器更新的 Vault 筆記。');
+  await page.getByRole('button',{name:'送出安全寫入'}).click();
+  await page.getByRole('dialog',{name:'知識編輯器'}).waitFor({state:'detached',timeout:60000});
+
+  await page.getByRole('button',{name:'＋ 新增知識'}).click();
+  await page.locator('input[name="title"]').fill('重複路徑衝突驗收');
+  await page.locator('input[name="path"]').fill('Phase17-Acceptance/note.md');
+  await page.locator('textarea[name="content"]').fill('此草稿必須保留，不能覆蓋既有檔案。');
+  await page.getByRole('button',{name:'送出安全寫入'}).click();
+  await page.getByText(/寫入衝突/).waitFor({timeout:60000});
+  assert.equal(await page.locator('textarea[name="content"]').inputValue(),'此草稿必須保留，不能覆蓋既有檔案。');
+  await page.getByRole('button',{name:'保留我的草稿'}).click();
+  await page.getByRole('button',{name:'關閉編輯器'}).click();
+
+  const workflowTitle=`Phase17 Workflow UI ${Date.now()}`;
+  await page.getByRole('button',{name:'＋ 新增知識'}).click();
+  await page.locator('select[name="knowledgeType"]').selectOption('workflow');
+  await page.locator('input[name="title"]').fill(workflowTitle);
+  await page.locator('input[name="path"]').fill(`Phase17-Acceptance/ui-workflow-${Date.now()}.md`);
+  await page.locator('textarea[name="workflow.diagrams"]').fill('flowchart TD\n  A[開始] --> B[驗收]');
+  await page.locator('textarea[name="workflow.steps"]').fill('開始｜進行驗收｜檢查1;檢查2');
+  await page.locator('[data-mermaid-preview] iframe').waitFor({timeout:30000});
+  await page.getByRole('button',{name:'送出安全寫入'}).click();
+  await page.getByRole('dialog',{name:'知識編輯器'}).waitFor({state:'detached',timeout:60000});
+  await page.getByRole('heading',{name:workflowTitle}).waitFor({timeout:15000});
+  await page.getByRole('heading',{name:workflowTitle}).locator('xpath=ancestor::article').getByRole('button',{name:'編輯 Vault 知識'}).click();
+  await page.locator('textarea[name="workflow.notes"]').fill('Workflow 已從 UI 更新並回讀。');
+  await page.getByRole('button',{name:'送出安全寫入'}).click();
+  await page.getByRole('dialog',{name:'知識編輯器'}).waitFor({state:'detached',timeout:60000});
+  assert.equal(errors.length,0,errors.join('\n'));
+  await context.close();
+
+  const offline=await browser.newContext({serviceWorkers:'block'});
+  await offline.route('http://127.0.0.1:8000/**',route=>route.abort('connectionrefused'));
+  const offlinePage=await offline.newPage();
+  await offlinePage.goto(base+'/?open=knowledge');
+  await offlinePage.getByText(/Vault 未連線/).waitFor({timeout:12000});
+  await offlinePage.getByRole('button',{name:'＋ 新增知識'}).click();
+  assert(await offlinePage.getByRole('button',{name:'送出安全寫入'}).isDisabled());
+  await offline.close();
+
+  const remote=await browser.newContext({serviceWorkers:'block'}),remotePage=await remote.newPage(),localhostWrites=[];
+  remotePage.on('request',request=>{if(request.url().startsWith('http://127.0.0.1:8000/')&&request.method()!=='GET')localhostWrites.push(request.url());});
+  await remotePage.goto(base+'/?cloud=1&open=knowledge');
+  await remotePage.getByText(/Vault 僅限本機使用/).waitFor();
+  await remotePage.getByRole('button',{name:'＋ 新增知識'}).click();
+  assert(await remotePage.getByRole('button',{name:'送出安全寫入'}).isDisabled());
+  assert.equal(localhostWrites.length,0,'remote mode must not call localhost write APIs');
+  await remote.close();await browser.close();
+  console.log('PASS: unified editor, seven types, preview, dirty guard, local save, offline and remote write gates');
+})().catch(error=>{console.error(error);process.exit(1);});

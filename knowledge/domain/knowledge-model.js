@@ -14,9 +14,11 @@
 
   function fromVault(record,kind){
     const path=text(record.path);
+    const content=text(record.content);
+    const heading=(/^#\s+(.+)$/m.exec(content)||[])[1];
     return {
-      id:path,source:"vault",kind:vaultKind(kind||record.type),title:text(record.title)||path.replace(/^.*\//,"").replace(/\.(md|canvas)$/i,""),
-      path,tags:tags(record.tags),category:text(record.category),contentHash:text(record.contentHash),body:text(record.content),
+      id:path,source:"vault",kind:vaultKind(kind||record.type),title:text(heading||record.title)||path.replace(/^.*\//,"").replace(/\.(md|canvas)$/i,""),
+      path,tags:tags(record.tags),category:text(record.category),contentHash:text(record.contentHash),body:content,
       modifiedAt:record.modifiedAt||null,raw:record
     };
   }
