@@ -1,4 +1,4 @@
-import {createDraft, deleteDraft, getDraft, listDrafts, saveDraft} from './draft-store.js';
+import {createDraft, deleteDraft, getDraft, importRemoteRecord, listDrafts, saveDraft} from './draft-store.js';
 import {addBlob, addResource, removeResource, listBlobs} from './blob-store.js';
 import {enqueueDraft, listOutbox} from './outbox-store.js';
 import {getTemplate, loadBuiltinTemplates} from './template-registry.js';
@@ -36,6 +36,13 @@ export class DraftController {
     this.error = null;
     this.emit();
     return this.current;
+  }
+
+  async importRecord(record) {
+    await this.flush();
+    const result = await importRemoteRecord(record);
+    await this.open(result.draft.draftId);
+    return result;
   }
 
   async open(draftId) {

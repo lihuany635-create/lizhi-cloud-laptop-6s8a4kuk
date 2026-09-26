@@ -6,6 +6,7 @@ import {getTemplate, listTemplates, loadBuiltinTemplates} from '../core/template
 import {createDefaultFields} from '../core/template-values.js';
 import {readTemplateFields, renderTemplateForm, renderUnknownTemplate, showFieldErrors} from '../ui/template-form.js';
 import {mountResourcePanel} from '../ui/resource-panel.js';
+import {authenticate, gatewayUrl, hasSession, readRemoteRecord, readRemoteSnapshot, sendPending, setGatewayUrl} from '../core/remote-sync.js';
 
 const MANIFEST_URL = 'https://raw.githubusercontent.com/lihuany635-create/lizhi-cloud-laptop-6s8a4kuk/knowledge-data/manifest.json';
 
@@ -13,10 +14,10 @@ export function mountKnowledgeWorkbench(panel) {
   if (panel.dataset.workbenchMounted) return;
   panel.dataset.workbenchMounted = 'true';
   panel.innerHTML = `
-    <div class="page-head"><div><div class="eyebrow">KNOWLEDGE WORKBENCH · LOCAL DRAFTS</div><h1>知識工作台</h1><p>先選知識位置，再把正在整理的內容安全留在這台裝置。正式跨裝置送出尚未啟用。</p></div><div class="actions"><button class="button primary" data-kw="new">＋ 新增知識</button></div></div>
+    <div class="page-head"><div><div class="eyebrow">KNOWLEDGE WORKBENCH</div><h1>知識工作台</h1><p>本機草稿可離線保存；經安全 Gateway 驗證後，才會正式送至共用知識資料層。</p></div><div class="actions"><button class="button primary" data-kw="new">＋ 新增知識</button></div></div>
     <section class="kw-status-grid">
       <div class="card"><small>本機保存</small><strong data-kw="save-status" role="status">尚未開啟草稿</strong><span data-kw="saved-at">—</span></div>
-      <div class="card"><small>待正式送出</small><strong data-kw="outbox-count">0 筆</strong><span>僅存在此瀏覽器，沒有上傳</span></div>
+      <div class="card"><small>送出佇列</small><strong data-kw="outbox-count">0 筆</strong><span>需手動驗證與送出；失敗會保留</span></div>
       <div class="card"><small>目前連線</small><strong data-kw="connection">檢查中</strong><span>離線時仍可保存已載入的草稿</span></div>
     </section>
     <section class="kw-layout">
@@ -31,11 +32,15 @@ export function mountKnowledgeWorkbench(panel) {
           <label>標籤（逗號分隔）<input data-kw="tags" autocomplete="off" placeholder="例如：RC, 品質"></label>
         </div>
         <div class="kw-resources" data-kw="resource-panel"></div>
-        <div class="actions"><button class="button accent" data-kw="prepare">準備送出（只排隊）</button><button class="button danger" data-kw="delete">刪除草稿</button></div>
+        <div class="actions"><button class="button accent" data-kw="prepare">準備送出</button><button class="button danger" data-kw="delete">刪除草稿</button></div>
         <small data-kw="revision" class="kw-revision">—</small>
       </div>
     </section>
-    <section class="section kw-future"><div class="section-head"><h2>正式資料與後續能力</h2></div><p>共用知識資料層已建立，但此階段沒有安全寫入服務。下列功能尚未啟用：</p><div class="meta"><span class="chip">正式送出 · 未啟用</span><span class="chip">模板與相關資料 · 本機可用</span><span class="chip">手動關聯 · 本機可用</span><span class="chip">Obsidian 備份 · 未啟用</span></div><div class="actions"><button class="button" data-kw="manifest">唯讀檢查共用資料層</button><span data-kw="manifest-status" class="kw-manifest-status">不影響本機草稿</span></div></section>
+    <section class="section kw-future"><div class="section-head"><h2>正式資料與安全送出</h2></div><p>正式知識儲存在公開的 GitHub knowledge-data 分支；請勿放入密碼、個資或其他敏感內容。Obsidian 備份仍未啟用。</p>
+      <div class="kw-remote-settings"><label>安全 Gateway HTTPS 網址<input data-kw="gateway-url" type="url" placeholder="https://你的-gateway.vercel.app/"></label><div class="actions"><button class="button" data-kw="gateway-save">儲存網址</button><span data-kw="gateway-status" role="status">尚未設定</span></div>
+      <label>寫入密鑰（僅用來換取短效 session；不會儲存）<input data-kw="write-secret" type="password" autocomplete="off"></label><div class="actions"><button class="button" data-kw="authenticate">驗證寫入權限</button><button class="button primary" data-kw="send-pending">送出待同步資料</button><span data-kw="send-status" role="status">尚未驗證</span></div></div>
+      <div class="section-head"><h2>跨裝置正式知識</h2><button class="button" data-kw="remote-refresh">重新讀取</button></div><p data-kw="remote-status">設定 Gateway 後可讀取。</p><div data-kw="remote-list" class="kw-draft-list"></div>
+      <div class="actions"><button class="button" data-kw="manifest">唯讀檢查共用資料層</button><span data-kw="manifest-status" class="kw-manifest-status">不影響本機草稿</span></div></section>
     <dialog class="kw-folder-dialog" data-kw="folder-dialog"><div class="kw-folder-dialog-body"><div class="section-head"><h2>選擇知識位置</h2><button class="button" type="button" data-kw="folder-cancel">關閉</button></div><p class="kw-note">選擇根目錄或資料夾。這只決定本機草稿的位置，尚未跨裝置同步。</p><div data-kw="picker-tree" class="kw-folder-tree"></div><p data-kw="picker-crumb" class="kw-folder-crumb">全部知識 &gt; 根目錄</p><label class="kw-create-folder">在目前位置新增資料夾<input data-kw="folder-name" placeholder="例如：工程/RC/施工問題"></label><button class="button" type="button" data-kw="folder-create">＋ 新增資料夾</button><p data-kw="folder-error" class="kw-folder-error" role="alert"></p><div class="actions"><button class="button primary" type="button" data-kw="folder-confirm">選用此位置</button></div></div></dialog>
     <dialog class="kw-folder-dialog" data-kw="template-dialog"><div class="kw-folder-dialog-body"><div class="section-head"><h2>選擇模板</h2><button class="button" type="button" data-kw="template-cancel">關閉</button></div><p class="kw-note">位置已選定；選擇模板後才建立本機草稿。</p><label class="kw-create-folder">模板<select data-kw="template-select"></select></label><p data-kw="template-description" class="kw-note"></p><p data-kw="template-error" class="kw-field-error" role="alert"></p><div class="actions"><button class="button primary" type="button" data-kw="template-confirm">建立草稿</button></div></div></dialog>`;
 
@@ -47,6 +52,7 @@ export function mountKnowledgeWorkbench(panel) {
   let browsePath = '';
   let pickerPath = '';
   let creating = false;
+  let sending = false;
   let newFolderPath = '';
   const expanded = new Set(['']);
 
@@ -62,7 +68,7 @@ export function mountKnowledgeWorkbench(panel) {
 
   function renderState({draft, status, error}) {
     get('save-status').textContent = error ? `本機草稿儲存失敗：${error.message}`
-      : status === 'queued' ? '待正式送出（僅本機）'
+      : status === 'queued' ? '已排入送出佇列（尚未上傳）'
       : status === 'saved' ? '本機草稿已儲存'
       : status === 'saving' ? '正在儲存本機草稿…'
       : status === 'unsaved' ? '有尚未儲存的本機修改…'
@@ -79,7 +85,9 @@ export function mountKnowledgeWorkbench(panel) {
 
   async function renderOutbox() {
     const jobs = await controller.outbox();
-    get('outbox-count').textContent = `${jobs.filter(job => job.status === 'queued').length} 筆`;
+    const pending = jobs.filter(job => ['queued', 'retry', 'sending', 'conflict', 'needs-review'].includes(job.status));
+    get('outbox-count').textContent = `${pending.length} 筆`;
+    if (pending.some(job => job.status === 'conflict')) get('send-status').textContent = '有版本衝突，請重新讀取正式資料並人工處理';
   }
 
   async function renderList() {
@@ -308,12 +316,71 @@ export function mountKnowledgeWorkbench(panel) {
       const response = await fetch(MANIFEST_URL, {signal: abort.signal, cache: 'no-store'});
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const manifest = await response.json();
-      if (manifest.dataModel !== 'lizhi-knowledge' || manifest.branch !== 'knowledge-data' || manifest.dataRevision !== 1) throw new Error('資料層版本不符');
-      status.textContent = '共用資料層可唯讀存取 · revision 1；正式送出未啟用';
+      if (manifest.dataModel !== 'lizhi-knowledge' || manifest.branch !== 'knowledge-data' || !Number.isSafeInteger(manifest.dataRevision)) throw new Error('資料層版本不符');
+      status.textContent = `共用資料層可唯讀存取 · revision ${manifest.dataRevision}`;
     } catch (error) {
       status.textContent = `目前無法讀取共用資料層（${error.message}）；本機草稿仍可使用`;
     } finally { clearTimeout(timer); }
   })());
+
+  get('gateway-url').value = gatewayUrl();
+  get('gateway-status').textContent = gatewayUrl() || '尚未設定';
+  get('gateway-save').addEventListener('click', () => {
+    try { get('gateway-status').textContent = setGatewayUrl(get('gateway-url').value); void renderRemote(); }
+    catch (error) { get('gateway-status').textContent = error.message; }
+  });
+  get('authenticate').addEventListener('click', () => void (async () => {
+    const secret = get('write-secret').value;
+    get('write-secret').value = '';
+    try {
+      const expiresAt = await authenticate(secret);
+      get('send-status').textContent = `已驗證；有效至 ${new Date(expiresAt).toLocaleTimeString('zh-TW')}`;
+    } catch (error) { get('send-status').textContent = error.message; }
+  })());
+  get('send-pending').addEventListener('click', () => void (async () => {
+    if (sending) return;
+    if (!hasSession()) { get('send-status').textContent = '請先驗證寫入密鑰'; return; }
+    sending = true;
+    get('send-pending').disabled = true;
+    try {
+      await controller.flush();
+      get('send-status').textContent = '正在送出…';
+      const outcomes = await sendPending();
+      const failed = outcomes.filter(item => item.error);
+      get('send-status').textContent = failed.length ? `${outcomes.length - failed.length} 筆成功，${failed.length} 筆待處理：${failed[0].error.message}` : `${outcomes.length} 筆已同步`;
+      await renderOutbox();
+      await renderList();
+      await renderRemote();
+      if (controller.current) await open(controller.current.draftId);
+    } finally { sending = false; get('send-pending').disabled = false; }
+  })().catch(error => { get('send-status').textContent = error.message; }));
+
+  async function renderRemote() {
+    const host = get('remote-list');
+    host.replaceChildren();
+    if (!gatewayUrl()) { get('remote-status').textContent = '尚未設定 Gateway。'; return; }
+    get('remote-status').textContent = '正在讀取正式資料…';
+    try {
+      const snapshot = await readRemoteSnapshot();
+      const items = snapshot.records?.items || [];
+      get('remote-status').textContent = `共用資料 revision ${snapshot.manifest.dataRevision} · ${items.length} 筆正式知識`;
+      for (const item of items) {
+        const button = document.createElement('button');
+        button.type = 'button'; button.className = 'card kw-draft-card';
+        const title = document.createElement('strong'); title.textContent = item.title || '未命名知識';
+        const detail = document.createElement('small'); detail.textContent = `${item.folderPath || '根目錄'} · revision ${item.revision}`;
+        button.append(title, detail);
+        button.addEventListener('click', () => void (async () => {
+          const record = await readRemoteRecord(item.id);
+          const result = await controller.importRecord(record);
+          await open(result.draft.draftId);
+          get('remote-status').textContent = result.existing ? '已開啟原有本機草稿；未覆蓋它的修改。' : '已建立正式知識的本機編輯副本；送出前會檢查版本。';
+        })().catch(error => { get('remote-status').textContent = error.message; }));
+        host.append(button);
+      }
+    } catch (error) { get('remote-status').textContent = `暫時無法讀取正式資料：${error.message}`; }
+  }
+  get('remote-refresh').addEventListener('click', () => void renderRemote());
 
   renderState({draft: null, status: 'idle', error: null});
   void resources.render().catch(fail);
@@ -329,6 +396,7 @@ export function mountKnowledgeWorkbench(panel) {
     if (draftId) await open(draftId);
     else await renderList();
     await renderOutbox();
+    await renderRemote();
   })().catch(fail);
   return controller;
 }

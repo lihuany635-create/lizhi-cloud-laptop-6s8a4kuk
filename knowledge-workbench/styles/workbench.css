@@ -9,6 +9,9 @@
 .route-knowledge-workbench .kw-draft-card.active { border-color:var(--accent); background:#f3e4cd; }
 .route-knowledge-workbench .kw-draft-card small,.route-knowledge-workbench .kw-note,.route-knowledge-workbench .kw-revision,.route-knowledge-workbench .kw-manifest-status { color:var(--muted); font-size:12px; line-height:1.5; }
 .route-knowledge-workbench .kw-fields { display:grid; gap:14px; margin:18px 0; }
+.route-knowledge-workbench .kw-remote-settings { display:grid; gap:14px; margin:18px 0; }
+.route-knowledge-workbench .kw-remote-settings label { display:grid; gap:6px; font-size:13px; font-weight:700; }
+.route-knowledge-workbench .kw-remote-settings input { width:100%; }
 .route-knowledge-workbench .kw-fields label { display:grid; gap:6px; font-size:13px; font-weight:700; }
 .route-knowledge-workbench .kw-fields input:not([type=file]),.route-knowledge-workbench .kw-fields textarea { width:100%; }
 .route-knowledge-workbench .kw-fields textarea { min-height:210px; resize:vertical; }

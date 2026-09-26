@@ -35,12 +35,17 @@ export function mountResourcePanel(host, controller) {
     for (const item of draft.images || []) {
       const card = document.createElement('div');
       card.className = 'kw-image-card';
-      const blobRecord = await getBlob(item.blobId);
+      const blobRecord = item.blobId ? await getBlob(item.blobId) : null;
       if (sequence !== renderSequence) return;
       if (blobRecord?.draftId === draft.draftId) {
         const image = document.createElement('img');
         image.src = objectUrl(blobRecord.blob);
         image.alt = item.alt || item.originalName || '本機圖片';
+        card.append(image);
+      } else if (item.url && isHttpUrl(item.url)) {
+        const image = document.createElement('img');
+        image.src = item.url;
+        image.alt = item.alt || item.originalName || '正式圖片';
         card.append(image);
       } else {
         const missing = document.createElement('p');
@@ -71,9 +76,9 @@ export function mountResourcePanel(host, controller) {
       const row = document.createElement('li');
       row.className = 'kw-attachment-row';
       const name = document.createElement('span');
-      name.textContent = `${fileText(item)}（僅本機）`;
+      name.textContent = `${fileText(item)}（${item.url ? '正式附件' : '僅本機'}）`;
       row.append(name);
-      const blobRecord = await getBlob(item.blobId);
+      const blobRecord = item.blobId ? await getBlob(item.blobId) : null;
       if (sequence !== renderSequence) return;
       if (blobRecord?.draftId === draft.draftId) {
         const url = objectUrl(blobRecord.blob);
@@ -82,6 +87,10 @@ export function mountResourcePanel(host, controller) {
         const download = document.createElement('a');
         download.href = url; download.download = item.originalName || item.name || 'attachment'; download.textContent = '下載';
         row.append(open, download);
+      } else if (item.url && isHttpUrl(item.url)) {
+        const open = document.createElement('a');
+        open.href = item.url; open.target = '_blank'; open.rel = 'noopener noreferrer'; open.textContent = '開啟';
+        row.append(open);
       } else {
         const missing = document.createElement('small'); missing.textContent = '檔案本體目前不可用'; row.append(missing);
       }

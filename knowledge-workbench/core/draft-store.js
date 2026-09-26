@@ -20,6 +20,24 @@ export async function createDraft() {
   return draft;
 }
 
+export async function importRemoteRecord(record) {
+  if (record.status !== 'active' || !record.id || !Number.isSafeInteger(record.revision)) throw new Error('正式知識資料無效');
+  return withTransaction(['drafts'], 'readwrite', async tx => {
+    const store = tx.objectStore('drafts');
+    const existing = await idbRequest(store.get(record.id));
+    if (existing) return {draft: existing, existing: true};
+    const timestamp = now();
+    const draft = {schemaVersion: 1, draftId: record.id, recordId: record.id, remoteRevision: record.revision,
+      draftRevision: 1, title: record.title, folderPath: record.folderPath, templateId: record.templateId,
+      templateVersion: record.templateVersion, fields: structuredClone(record.fields), tags: structuredClone(record.tags || []),
+      relations: structuredClone(record.relations || []), links: structuredClone(record.links || []),
+      images: structuredClone(record.images || []), attachments: structuredClone(record.attachments || []),
+      localState: 'draft', dirty: false, createdAt: timestamp, updatedAt: timestamp, lastLocalSavedAt: timestamp, lastSyncedAt: timestamp};
+    await idbRequest(store.add(draft));
+    return {draft, existing: false};
+  });
+}
+
 export async function getDraft(draftId) {
   return withTransaction(['drafts'], 'readonly', tx => idbRequest(tx.objectStore('drafts').get(draftId)));
 }

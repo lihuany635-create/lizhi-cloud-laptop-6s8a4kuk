@@ -42,7 +42,7 @@ export function updateQueuedJob(job, draft, timestamp) {
   const validation = validateQueuePayload(draft);
   return {...job, payloadRevision: draft.draftRevision, templateId: draft.templateId || null,
     templateVersion: draft.templateVersion || null, payload: snapshotPayload(draft),
-    status: validation.valid ? job.status : 'needs-review', updatedAt: timestamp};
+    status: validation.valid ? (job.status === 'needs-review' ? 'needs-review' : 'queued') : 'needs-review', updatedAt: timestamp};
 }
 
 export function putRelation(relations = [], sourceId, targetId, replacingId = null) {
