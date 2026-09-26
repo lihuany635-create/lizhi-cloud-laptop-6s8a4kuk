@@ -1,0 +1,19 @@
+.route-knowledge-workbench .kw-status-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-bottom:18px; }
+.route-knowledge-workbench .kw-status-grid .card { display:grid; gap:7px; }
+.route-knowledge-workbench .kw-status-grid small,.route-knowledge-workbench .kw-status-grid span { color:var(--muted); font-size:12px; }
+.route-knowledge-workbench .kw-status-grid strong { font-size:17px; overflow-wrap:anywhere; }
+.route-knowledge-workbench .kw-error { color:var(--danger); }
+.route-knowledge-workbench .kw-layout { display:grid; grid-template-columns:minmax(210px,.8fr) minmax(0,1.5fr); gap:18px; align-items:start; }
+.route-knowledge-workbench .kw-draft-list { display:grid; gap:8px; }
+.route-knowledge-workbench .kw-draft-card { width:100%; display:grid; gap:8px; text-align:left; cursor:pointer; }
+.route-knowledge-workbench .kw-draft-card.active { border-color:var(--accent); background:#f3e4cd; }
+.route-knowledge-workbench .kw-draft-card small,.route-knowledge-workbench .kw-note,.route-knowledge-workbench .kw-revision,.route-knowledge-workbench .kw-manifest-status { color:var(--muted); font-size:12px; line-height:1.5; }
+.route-knowledge-workbench .kw-fields { display:grid; gap:14px; margin:18px 0; }
+.route-knowledge-workbench .kw-fields label { display:grid; gap:6px; font-size:13px; font-weight:700; }
+.route-knowledge-workbench .kw-fields input:not([type=file]),.route-knowledge-workbench .kw-fields textarea { width:100%; }
+.route-knowledge-workbench .kw-fields textarea { min-height:210px; resize:vertical; }
+.route-knowledge-workbench .kw-attachments { padding-left:22px; overflow-wrap:anywhere; }
+.route-knowledge-workbench .kw-revision { display:block; margin-top:12px; }
+.route-knowledge-workbench .kw-future .actions { align-items:center; margin-top:18px; }
+@media(max-width:950px){.route-knowledge-workbench .kw-layout { grid-template-columns:1fr; }}
+@media(max-width:680px){.route-knowledge-workbench .kw-status-grid { grid-template-columns:1fr; }.route-knowledge-workbench .kw-fields textarea { min-height:180px; }}

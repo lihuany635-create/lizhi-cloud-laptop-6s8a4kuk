@@ -4,7 +4,7 @@ const IS_CLOUD_SITE=location.hostname.endsWith("github.io")||new URLSearchParams
 const CLOUD_APP_URL="https://lihuany635-create.github.io/lizhi-cloud-laptop-6s8a4kuk/";
 const RELEASE_BASE="https://github.com/lihuany635-create/lizhi-cloud-laptop-6s8a4kuk/releases/download/media-2026-08-23/";
 const queryParams=new URLSearchParams(location.search);
-const OPEN_ROUTES=["home","knowledge","media","chat","study","a4","trash","settings","uploads"];
+const OPEN_ROUTES=["home","knowledge","knowledge-workbench","media","chat","study","a4","trash","settings","uploads"];
 const requestedRoute=queryParams.get("open");
 const state={route:OPEN_ROUTES.includes(requestedRoute)?requestedRoute:"home",records:[],cloudMedia:[],query:"",mediaType:"all",modal:null,sidebar:!requestedRoute||requestedRoute==="home",urls:[]};
 const app=document.querySelector("#app");
@@ -17,7 +17,7 @@ const now=()=>new Date().toISOString();
 const escapeHtml=value=>String(value??"").replace(/[&<>'"]/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"})[char]);
 const formatDate=value=>new Intl.DateTimeFormat("zh-TW",{year:"numeric",month:"short",day:"numeric"}).format(new Date(value));
 const formatBytes=bytes=>bytes>=1073741824?`${(bytes/1073741824).toFixed(2)} GB`:bytes>=1048576?`${(bytes/1048576).toFixed(1)} MB`:bytes>=1024?`${(bytes/1024).toFixed(1)} KB`:`${bytes} B`;
-function syncRouteUrl(route){const url=new URL(location.href);if(route==="home")url.searchParams.delete("open");else url.searchParams.set("open",route);url.searchParams.delete("room");history.replaceState(null,"",url)}
+function syncRouteUrl(route){const url=new URL(location.href);if(route==="home")url.searchParams.delete("open");else url.searchParams.set("open",route);url.searchParams.delete("room");if(route!=="knowledge-workbench")url.searchParams.delete("draft");history.replaceState(null,"",url)}
 
 const CHAT_DEVICE_ID_KEY="lizhi-realtime-device-id";
 const CHAT_DEVICE_NAME_KEY="lizhi-realtime-device-name";
@@ -51,9 +51,9 @@ const trashed=()=>state.records.filter(row=>row.deletedAt);
 function toast(message){document.querySelector(".toast")?.remove();const el=document.createElement("div");el.className="toast";el.textContent=message;document.body.append(el);setTimeout(()=>el.remove(),2600);}
 
 const navItems=[
-  ["home","⌂","封面"],["knowledge","知","知識庫"],["media","影","影音庫"],["chat","↔","即時對話"],["study","✎","立之讀書室"],["a4","頁","A4 文件編輯器"],["uploads","↑","上傳狀態"],["trash","♲","回收桶"],["settings","⚙","本機設定"]
+  ["home","⌂","封面"],["knowledge","知","知識庫"],["knowledge-workbench","▣","知識工作台"],["media","影","影音庫"],["chat","↔","即時對話"],["study","✎","立之讀書室"],["a4","頁","A4 文件編輯器"],["uploads","↑","上傳狀態"],["trash","♲","回收桶"],["settings","⚙","本機設定"]
 ];
-function navDescription(route){return route==="knowledge"?"文件、筆記與搜尋":route==="media"?"影片、音訊與已生成 Podcast":route==="chat"?"手機與電腦即時傳字":route==="study"?"畫布提問與教學模式":route==="a4"?"固定格子、模板與 Word／PDF":route==="trash"?"復原已刪除內容":route==="uploads"?"最近回報、待上傳與失敗原因":route==="settings"?"備份與裝置資料":"返回收藏入口";}
+function navDescription(route){return route==="knowledge"?"文件、筆記與搜尋":route==="knowledge-workbench"?"本機草稿與待送出佇列":route==="media"?"影片、音訊與已生成 Podcast":route==="chat"?"手機與電腦即時傳字":route==="study"?"畫布提問與教學模式":route==="a4"?"固定格子、模板與 Word／PDF":route==="trash"?"復原已刪除內容":route==="uploads"?"最近回報、待上傳與失敗原因":route==="settings"?"備份與裝置資料":"返回收藏入口";}
 function layout(content){return `<div class="shell route-${state.route} ${state.sidebar?"drawer-open":""}"><header class="topbar"><a class="brand" href="#" data-route="home"><span class="brand-mark">立</span><span><b>立之雲端庫</b><small>${IS_CLOUD_SITE?"THIS LAPTOP CLOUD ARCHIVE":"LOCAL PRIVATE ARCHIVE"}</small></span></a><span class="local-pill">● ${IS_CLOUD_SITE?"21 集雲端同步":"本機資料庫"}</span><button class="button library-menu-button" data-action="toggle-menu">選擇收藏庫</button></header><button class="drawer-handle" data-action="toggle-menu" aria-label="${state.sidebar?"關閉收藏庫選單":"拉出收藏庫選單"}">${state.sidebar?"›":"‹"}</button><aside class="sidebar ${state.sidebar?"open":""}" aria-label="雲端庫入口"><div class="drawer-head"><div><div class="nav-title">LIBRARY MENU</div><h2>選擇收藏庫</h2></div><button class="drawer-close" data-action="toggle-menu" aria-label="關閉選單">×</button></div><nav class="nav-list">${navItems.map(([route,icon,label],index)=>`<button class="nav-link ${state.route===route?"active":""}" data-route="${route}"><span>${icon}</span><b><small>${String(index+1).padStart(2,"0")}</small>${label}<em>${navDescription(route)}</em></b><i>進入 →</i></button>`).join("")}</nav><div class="side-note">KNOWLEDGE · MEDIA · CHAT · STUDY · A4<br>${IS_CLOUD_SITE?"AVAILABLE ON EVERY DEVICE":"PRIVATE BY DESIGN"}</div></aside><main class="main">${content}</main></div>${renderModal()}`;}
 function head(eyebrow,title,description,actions=""){return `<div class="page-head"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1><p>${description}</p></div><div class="actions">${actions}</div></div>`;}
 

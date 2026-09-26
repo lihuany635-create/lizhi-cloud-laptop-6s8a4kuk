@@ -42,6 +42,14 @@ function renderWorkspace() {
   for(const [route, el] of workspacePanels) el.hidden = route !== state.route;
   if(state.route === 'media') updateMediaPanel(panel);
   else if(state.route === 'chat') updateChatPanel(panel);
+  else if(state.route === 'knowledge-workbench') {
+    if(!panel.hasChildNodes()) {
+      panel.innerHTML = '<section class="section">正在開啟知識工作台…</section>';
+      import('./knowledge-workbench/pages/workbench.js')
+        .then(({mountKnowledgeWorkbench}) => mountKnowledgeWorkbench(panel))
+        .catch(error => { panel.textContent = `知識工作台無法開啟：${error.message}`; });
+    }
+  }
   else if(state.route === 'study' || state.route === 'a4') {
     if(!panel.hasChildNodes()) {
       panel.innerHTML = state.route === 'study' ? renderStudy() : renderA4Editor();
