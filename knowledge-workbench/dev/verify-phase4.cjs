@@ -44,10 +44,14 @@ async function dbSnapshot(page) {
     await page.locator('[data-kw="manifest"]').click();
     await page.waitForFunction(() => document.querySelector('[data-kw="manifest-status"]').textContent.includes('可唯讀存取'));
     await page.locator('[data-kw="new"]').click();
+    await page.locator('[data-kw="folder-dialog"]').waitFor({state: 'visible'});
+    await page.locator('[data-kw="folder-name"]').fill('工程/測試');
+    await page.locator('[data-kw="folder-create"]').click();
+    await page.waitForFunction(() => document.querySelector('[data-kw="picker-crumb"]').textContent.includes('測試'));
+    await page.locator('[data-kw="folder-confirm"]').click();
     await page.waitForURL(/draft=/);
     const draftId = new URL(page.url()).searchParams.get('draft');
     await page.locator('[data-kw="title"]').fill('Phase 4 正式草稿');
-    await page.locator('[data-kw="folder"]').fill('工程/測試');
     await page.locator('[data-kw="body"]').fill('工作台正式頁測試內容');
     await page.locator('[data-kw="tags"]').fill('RC, 工作台');
     await page.waitForFunction(() => document.querySelector('[data-kw="save-status"]').textContent === '本機草稿已儲存');

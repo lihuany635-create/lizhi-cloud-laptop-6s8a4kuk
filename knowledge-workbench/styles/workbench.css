@@ -15,5 +15,21 @@
 .route-knowledge-workbench .kw-attachments { padding-left:22px; overflow-wrap:anywhere; }
 .route-knowledge-workbench .kw-revision { display:block; margin-top:12px; }
 .route-knowledge-workbench .kw-future .actions { align-items:center; margin-top:18px; }
+.route-knowledge-workbench .kw-folder-tree { display:grid; gap:3px; margin:8px 0 12px; max-height:320px; overflow:auto; }
+.route-knowledge-workbench .kw-folder-row { display:flex; align-items:center; padding-left:calc(var(--kw-depth) * 16px); min-width:0; }
+.route-knowledge-workbench .kw-folder-toggle,.route-knowledge-workbench .kw-folder-spacer { width:30px; flex:0 0 30px; border:0; background:none; color:var(--muted); text-align:center; }
+.route-knowledge-workbench .kw-folder-toggle { cursor:pointer; }
+.route-knowledge-workbench .kw-folder-item { flex:1; min-width:0; padding:7px 8px; border:1px solid transparent; border-radius:8px; background:transparent; text-align:left; overflow-wrap:anywhere; cursor:pointer; }
+.route-knowledge-workbench .kw-folder-item:hover,.route-knowledge-workbench .kw-folder-item.active { border-color:var(--accent); background:#f3e4cd; }
+.route-knowledge-workbench .kw-folder-crumb,.route-knowledge-workbench .kw-folder-warning { color:var(--muted); font-size:12px; overflow-wrap:anywhere; }
+.route-knowledge-workbench .kw-folder-warning,.route-knowledge-workbench .kw-folder-error { color:var(--danger); }
+.route-knowledge-workbench .kw-location { display:grid; justify-items:start; gap:6px; font-size:13px; font-weight:700; }
+.route-knowledge-workbench .kw-location small { color:var(--muted); font-weight:400; }
+.kw-folder-dialog { width:min(560px,calc(100vw - 24px)); max-height:calc(100vh - 24px); border:1px solid var(--line); border-radius:14px; padding:0; background:var(--paper); color:var(--ink); }
+.kw-folder-dialog::backdrop { background:rgba(24,28,34,.58); }
+.kw-folder-dialog-body { padding:20px; max-height:calc(100vh - 24px); overflow:auto; }
+.kw-folder-dialog .kw-create-folder { display:grid; gap:6px; margin:14px 0 8px; font-size:13px; font-weight:700; }
+.kw-folder-dialog .kw-create-folder input { width:100%; }
+.kw-folder-dialog .kw-folder-error { min-height:1.4em; font-size:12px; }
 @media(max-width:950px){.route-knowledge-workbench .kw-layout { grid-template-columns:1fr; }}
 @media(max-width:680px){.route-knowledge-workbench .kw-status-grid { grid-template-columns:1fr; }.route-knowledge-workbench .kw-fields textarea { min-height:180px; }}
