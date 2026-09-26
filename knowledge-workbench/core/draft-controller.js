@@ -1,8 +1,9 @@
 import {createDraft, deleteDraft, getDraft, listDrafts, saveDraft} from './draft-store.js';
-import {addBlob, listBlobs} from './blob-store.js';
+import {addBlob, addResource, removeResource, listBlobs} from './blob-store.js';
 import {enqueueDraft, listOutbox} from './outbox-store.js';
 import {getTemplate, loadBuiltinTemplates} from './template-registry.js';
 import {adaptDraft, validateFields} from './template-values.js';
+import {validateLinks, validateRelations} from './resource-model.js';
 
 export class DraftController {
   constructor({onState = () => {}, debounceMs = 800} = {}) {
@@ -97,15 +98,42 @@ export class DraftController {
     await this.flush();
     if (!this.current) throw new Error('請先建立草稿');
     const {draft, attachment} = await addBlob(this.current.draftId, file);
-    this.current = draft;
+    this.current = adaptDraft(draft);
     this.status = 'saved';
     this.emit();
     return attachment;
   }
 
+  async addResource(file, kind) {
+    await this.flush();
+    if (!this.current) throw new Error('請先建立草稿');
+    const {draft, asset} = await addResource(this.current.draftId, file, kind, this.current.draftRevision);
+    this.current = adaptDraft(draft);
+    this.status = 'saved';
+    this.emit();
+    return asset;
+  }
+
+  async removeResource(identifier, kind) {
+    await this.flush();
+    if (!this.current) throw new Error('請先開啟草稿');
+    const {draft, removed} = await removeResource(this.current.draftId, identifier, kind, this.current.draftRevision);
+    this.current = adaptDraft(draft);
+    this.status = 'saved';
+    this.emit();
+    return removed;
+  }
+
   async prepareSend() {
     await this.flush();
     if (!this.current) throw new Error('請先建立草稿');
+    const linkResult = validateLinks(this.current.links || []);
+    if (!linkResult.valid) {
+      const error = new Error('請先確認外部網址');
+      error.linkErrors = linkResult.errors;
+      throw error;
+    }
+    if (!validateRelations(this.current)) throw new Error('筆記關聯無效，請先修正');
     if (this.current.templateId) {
       if (this.current.templateId === 'general-note' && this.current.templateVersion === 1 && !getTemplate('general-note', 1)) await loadBuiltinTemplates();
       const template = getTemplate(this.current.templateId, this.current.templateVersion);

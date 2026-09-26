@@ -125,7 +125,7 @@ async function dbSnapshot(page) {
     await page.locator('.route-knowledge-workbench .kw-editor').waitFor();
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2), false);
     await page.locator('.kw-draft-card').first().click();
-    await page.waitForFunction(() => document.querySelector('[data-kw="body"]').value === '再次修改 queued 草稿');
+    await page.waitForFunction(() => document.querySelector('[data-kw="body"]')?.value === '再次修改 queued 草稿');
     assert.deepEqual(writes, []);
     assert.deepEqual(errors, []);
     console.log('PASS: formal route, old route, draft reuse/recovery, offline, blob, queued outbox, revision guard, existing navigation, mobile width, no network writes or page errors');

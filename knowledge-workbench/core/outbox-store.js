@@ -1,6 +1,7 @@
 import {idbRequest, withTransaction} from './draft-db.js';
 import {getTemplate} from './template-registry.js';
 import {validateFields} from './template-values.js';
+import {snapshotPayload, validateQueuePayload} from './resource-model.js';
 
 export async function enqueueDraft(draftId) {
   return withTransaction(['drafts', 'outbox'], 'readwrite', async tx => {
@@ -17,6 +18,13 @@ export async function enqueueDraft(draftId) {
         throw error;
       }
     }
+    const resourceValidation = validateQueuePayload(draft);
+    if (!resourceValidation.valid) {
+      const error = new Error(resourceValidation.templateMissing ? '找不到模板版本' : !resourceValidation.relationsValid ? '筆記關聯無效' : '請先確認外部網址');
+      error.linkErrors = resourceValidation.linkErrors;
+      error.fieldErrors = resourceValidation.fieldErrors;
+      throw error;
+    }
     const timestamp = new Date().toISOString();
     if (draft.localState !== 'ready-to-send') {
       draft = {...draft, localState: 'ready-to-send', draftRevision: draft.draftRevision + 1, dirty: true, updatedAt: timestamp, lastLocalSavedAt: timestamp};
@@ -25,8 +33,8 @@ export async function enqueueDraft(draftId) {
     const outbox = tx.objectStore('outbox');
     const existing = await idbRequest(outbox.index('byDraftOperation').get([draftId, 'upsert']));
     const job = existing
-      ? {...existing, payloadRevision: draft.draftRevision, templateId: draft.templateId || null, templateVersion: draft.templateVersion || null, status: 'queued', updatedAt: timestamp}
-      : {jobId: crypto.randomUUID(), draftId, recordId: draft.recordId, operation: 'upsert', payloadRevision: draft.draftRevision, templateId: draft.templateId || null, templateVersion: draft.templateVersion || null, status: 'queued', createdAt: timestamp, updatedAt: timestamp};
+      ? {...existing, payloadRevision: draft.draftRevision, templateId: draft.templateId || null, templateVersion: draft.templateVersion || null, payload: snapshotPayload(draft), status: 'queued', updatedAt: timestamp}
+      : {jobId: crypto.randomUUID(), draftId, recordId: draft.recordId, operation: 'upsert', payloadRevision: draft.draftRevision, templateId: draft.templateId || null, templateVersion: draft.templateVersion || null, payload: snapshotPayload(draft), status: 'queued', createdAt: timestamp, updatedAt: timestamp};
     await idbRequest(outbox.put(job));
     return {draft, job};
   });

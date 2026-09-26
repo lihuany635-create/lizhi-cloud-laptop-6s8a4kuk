@@ -1,6 +1,5 @@
 import {idbRequest, withTransaction} from './draft-db.js';
-import {getTemplate} from './template-registry.js';
-import {validateFields} from './template-values.js';
+import {updateQueuedJob} from './resource-model.js';
 
 const now = () => new Date().toISOString();
 
@@ -9,7 +8,7 @@ export function newDraft() {
   return {
     schemaVersion: 1, draftId: crypto.randomUUID(), recordId: null, draftRevision: 1,
     title: '', folderPath: '', templateId: '', templateVersion: 1,
-    fields: {}, tags: [], relations: [], links: [], attachments: [],
+    fields: {}, tags: [], relations: [], links: [], images: [], attachments: [],
     localState: 'draft', dirty: true,
     createdAt: timestamp, updatedAt: timestamp, lastLocalSavedAt: timestamp,
   };
@@ -46,13 +45,7 @@ export async function saveDraft(snapshot) {
     await idbRequest(drafts.put(saved));
     const outbox = tx.objectStore('outbox');
     const job = await idbRequest(outbox.index('byDraftOperation').get([saved.draftId, 'upsert']));
-    if (job) {
-      const template = saved.templateId ? getTemplate(saved.templateId, saved.templateVersion) : null;
-      const valid = !saved.templateId || (template && validateFields(template, saved.fields).valid);
-      await idbRequest(outbox.put({...job, payloadRevision: saved.draftRevision,
-        templateId: saved.templateId || null, templateVersion: saved.templateVersion || null,
-        status: valid ? job.status : 'needs-review', updatedAt: timestamp}));
-    }
+    if (job) await idbRequest(outbox.put(updateQueuedJob(job, saved, timestamp)));
     return saved;
   });
 }

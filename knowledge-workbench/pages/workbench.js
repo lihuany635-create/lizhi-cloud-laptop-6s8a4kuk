@@ -5,6 +5,7 @@ import {getAncestorPaths, getFolderLookupKey, validateFolderPath} from '../core/
 import {getTemplate, listTemplates, loadBuiltinTemplates} from '../core/template-registry.js';
 import {createDefaultFields} from '../core/template-values.js';
 import {readTemplateFields, renderTemplateForm, renderUnknownTemplate, showFieldErrors} from '../ui/template-form.js';
+import {mountResourcePanel} from '../ui/resource-panel.js';
 
 const MANIFEST_URL = 'https://raw.githubusercontent.com/lihuany635-create/lizhi-cloud-laptop-6s8a4kuk/knowledge-data/manifest.json';
 
@@ -28,20 +29,20 @@ export function mountKnowledgeWorkbench(panel) {
           <div class="kw-template-meta" data-kw="template-meta">尚未選擇模板</div>
           <div class="kw-template-form" data-kw="template-form"></div>
           <label>標籤（逗號分隔）<input data-kw="tags" autocomplete="off" placeholder="例如：RC, 品質"></label>
-          <label>圖片／附件暫存<input data-kw="attachment" type="file"></label>
-          <ul data-kw="attachments" class="kw-attachments"></ul>
         </div>
+        <div class="kw-resources" data-kw="resource-panel"></div>
         <div class="actions"><button class="button accent" data-kw="prepare">準備送出（只排隊）</button><button class="button danger" data-kw="delete">刪除草稿</button></div>
         <small data-kw="revision" class="kw-revision">—</small>
       </div>
     </section>
-    <section class="section kw-future"><div class="section-head"><h2>正式資料與後續能力</h2></div><p>共用知識資料層已建立，但此階段沒有安全寫入服務。下列功能尚未啟用：</p><div class="meta"><span class="chip">正式送出 · 未啟用</span><span class="chip">模板表單 · 本機可用</span><span class="chip">關聯與搜尋 · 未啟用</span><span class="chip">Obsidian 備份 · 未啟用</span></div><div class="actions"><button class="button" data-kw="manifest">唯讀檢查共用資料層</button><span data-kw="manifest-status" class="kw-manifest-status">不影響本機草稿</span></div></section>
+    <section class="section kw-future"><div class="section-head"><h2>正式資料與後續能力</h2></div><p>共用知識資料層已建立，但此階段沒有安全寫入服務。下列功能尚未啟用：</p><div class="meta"><span class="chip">正式送出 · 未啟用</span><span class="chip">模板與相關資料 · 本機可用</span><span class="chip">手動關聯 · 本機可用</span><span class="chip">Obsidian 備份 · 未啟用</span></div><div class="actions"><button class="button" data-kw="manifest">唯讀檢查共用資料層</button><span data-kw="manifest-status" class="kw-manifest-status">不影響本機草稿</span></div></section>
     <dialog class="kw-folder-dialog" data-kw="folder-dialog"><div class="kw-folder-dialog-body"><div class="section-head"><h2>選擇知識位置</h2><button class="button" type="button" data-kw="folder-cancel">關閉</button></div><p class="kw-note">選擇根目錄或資料夾。這只決定本機草稿的位置，尚未跨裝置同步。</p><div data-kw="picker-tree" class="kw-folder-tree"></div><p data-kw="picker-crumb" class="kw-folder-crumb">全部知識 &gt; 根目錄</p><label class="kw-create-folder">在目前位置新增資料夾<input data-kw="folder-name" placeholder="例如：工程/RC/施工問題"></label><button class="button" type="button" data-kw="folder-create">＋ 新增資料夾</button><p data-kw="folder-error" class="kw-folder-error" role="alert"></p><div class="actions"><button class="button primary" type="button" data-kw="folder-confirm">選用此位置</button></div></div></dialog>
     <dialog class="kw-folder-dialog" data-kw="template-dialog"><div class="kw-folder-dialog-body"><div class="section-head"><h2>選擇模板</h2><button class="button" type="button" data-kw="template-cancel">關閉</button></div><p class="kw-note">位置已選定；選擇模板後才建立本機草稿。</p><label class="kw-create-folder">模板<select data-kw="template-select"></select></label><p data-kw="template-description" class="kw-note"></p><p data-kw="template-error" class="kw-field-error" role="alert"></p><div class="actions"><button class="button primary" type="button" data-kw="template-confirm">建立草稿</button></div></div></dialog>`;
 
   const get = key => panel.querySelector(`[data-kw="${key}"]`);
   const inputKeys = ['title', 'tags'];
   const controller = new DraftController({onState: renderState});
+  const resources = mountResourcePanel(get('resource-panel'), controller);
   controller.attachLifecycle();
   let browsePath = '';
   let pickerPath = '';
@@ -159,13 +160,7 @@ export function mountKnowledgeWorkbench(panel) {
   }
 
   async function renderAttachments() {
-    const host = get('attachments');
-    host.replaceChildren();
-    for (const item of await controller.attachments()) {
-      const row = document.createElement('li');
-      row.textContent = `${item.name} · ${item.size} bytes（僅本機）`;
-      host.append(row);
-    }
+    await resources.render();
   }
 
   function fill(draft) {
@@ -282,21 +277,17 @@ export function mountKnowledgeWorkbench(panel) {
   get('template-form').addEventListener('input', updateFromForm);
   get('template-form').addEventListener('change', updateFromForm);
   get('template-form').addEventListener('focusout', () => void controller.flush().catch(fail));
-  get('attachment').addEventListener('change', () => void (async () => {
-    const file = get('attachment').files[0];
-    if (!file) return;
-    await controller.addAttachment(file);
-    get('attachment').value = '';
-    await renderAttachments();
-    await renderList();
-  })().catch(fail));
   get('prepare').addEventListener('click', () => void controller.prepareSend().then(() => {
     showFieldErrors(get('template-form'));
+    resources.showLinkErrors();
     return renderList();
   }).catch(error => {
-    if (error.fieldErrors) {
+    if (error.fieldErrors && Object.keys(error.fieldErrors).length) {
       showFieldErrors(get('template-form'), error.fieldErrors);
       get('save-status').textContent = '草稿已保存；請先確認模板欄位，再準備送出';
+    } else if (error.linkErrors && Object.keys(error.linkErrors).length) {
+      resources.showLinkErrors(error.linkErrors);
+      get('save-status').textContent = '草稿已保存；請先確認外部網址，再準備送出';
     } else get('save-status').textContent = error.message;
   }));
   get('delete').addEventListener('click', () => void (async () => {
@@ -325,6 +316,7 @@ export function mountKnowledgeWorkbench(panel) {
   })());
 
   renderState({draft: null, status: 'idle', error: null});
+  void resources.render().catch(fail);
   void (async () => {
     await loadBuiltinTemplates();
     const bootstrap = await ensureFoldersFromDrafts(await controller.list());
