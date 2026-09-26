@@ -1,0 +1,32 @@
+{
+  "templateId": "problem-solution",
+  "templateVersion": 1,
+  "name": "問題／解法",
+  "description": "記錄問題、分析、處理方式與結果。",
+  "status": "active",
+  "sections": [
+    {"sectionId": "problem", "title": "問題", "fieldKeys": ["occurredOn", "issue", "context", "location", "relatedQuestions"]},
+    {"sectionId": "analysis", "title": "分析", "fieldKeys": ["possibleCauses", "confirmedCause", "analysisNotes"]},
+    {"sectionId": "handling", "title": "處理", "fieldKeys": ["solution", "steps", "resources"]},
+    {"sectionId": "result", "title": "結果", "fieldKeys": ["outcome", "isResolved", "followUp"]},
+    {"sectionId": "extra", "title": "補充", "fieldKeys": ["sourceUrl", "notes"]}
+  ],
+  "fields": [
+    {"key": "occurredOn", "label": "發生日期", "type": "date", "required": false, "defaultValue": null},
+    {"key": "issue", "label": "問題／現象", "type": "textarea", "required": true, "defaultValue": ""},
+    {"key": "context", "label": "背景／情境", "type": "textarea", "required": false, "defaultValue": ""},
+    {"key": "location", "label": "發生位置", "type": "text", "required": false, "defaultValue": ""},
+    {"key": "relatedQuestions", "label": "相關問題", "type": "textarea", "required": false, "defaultValue": ""},
+    {"key": "possibleCauses", "label": "可能原因", "type": "textarea", "required": false, "defaultValue": ""},
+    {"key": "confirmedCause", "label": "已確認原因", "type": "textarea", "required": false, "defaultValue": ""},
+    {"key": "analysisNotes", "label": "分析備註", "type": "textarea", "required": false, "defaultValue": ""},
+    {"key": "solution", "label": "解決／處理方式", "type": "textarea", "required": true, "defaultValue": ""},
+    {"key": "steps", "label": "處理步驟", "type": "textarea", "required": false, "defaultValue": ""},
+    {"key": "resources", "label": "使用資源／工具", "type": "textarea", "required": false, "defaultValue": ""},
+    {"key": "outcome", "label": "處理結果", "type": "textarea", "required": false, "defaultValue": ""},
+    {"key": "isResolved", "label": "是否已解決", "type": "checkbox", "required": false, "defaultValue": false},
+    {"key": "followUp", "label": "後續追蹤", "type": "textarea", "required": false, "defaultValue": ""},
+    {"key": "sourceUrl", "label": "主要參考網址", "type": "url", "required": false, "defaultValue": ""},
+    {"key": "notes", "label": "其他備註", "type": "textarea", "required": false, "defaultValue": ""}
+  ]
+}

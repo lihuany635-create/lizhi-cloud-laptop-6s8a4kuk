@@ -30,11 +30,18 @@ export function listTemplates({status} = {}) {
 }
 
 export async function loadBuiltinTemplates() {
-  if (getTemplate('general-note', 1)) return;
+  const builtins = [
+    {id: 'general-note', version: 1, file: 'general-note.v1.json'},
+    {id: 'problem-solution', version: 1, file: 'problem-solution.v1.json'},
+  ];
+  if (builtins.every(item => getTemplate(item.id, item.version))) return;
   if (!builtinLoading) builtinLoading = (async () => {
-    const response = await fetch(new URL('../templates/builtin/general-note.v1.json', import.meta.url));
-    if (!response.ok) throw new Error(`無法載入內建模板：HTTP ${response.status}`);
-    registerTemplate(await response.json());
-  })().catch(error => { builtinLoading = null; throw error; });
+    for (const item of builtins) {
+      if (getTemplate(item.id, item.version)) continue;
+      const response = await fetch(new URL(`../templates/builtin/${item.file}`, import.meta.url));
+      if (!response.ok) throw new Error(`無法載入內建模板：HTTP ${response.status}`);
+      registerTemplate(await response.json());
+    }
+  })().finally(() => { builtinLoading = null; });
   await builtinLoading;
 }

@@ -228,7 +228,9 @@ export function mountKnowledgeWorkbench(panel) {
         select.append(option);
       }
       if (!templates.length) throw new Error('目前沒有可用模板');
-      get('template-description').textContent = templates[0].description || '';
+      const preferred = templates.find(template => template.templateId === 'general-note') || templates[0];
+      select.value = `${preferred.templateId}:${preferred.templateVersion}`;
+      get('template-description').textContent = preferred.description || '';
       get('template-error').textContent = '';
       get('folder-dialog').close();
       get('template-dialog').showModal();
