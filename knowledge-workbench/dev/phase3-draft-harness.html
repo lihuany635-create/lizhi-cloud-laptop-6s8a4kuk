@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Phase 3｜本機草稿驗收頁</title>
+  <style>
+    :root { font-family: system-ui, sans-serif; color: #17304a; background: #f3f6fa; }
+    body { margin: 0; padding: 24px; }
+    main { max-width: 920px; margin: auto; }
+    .panel { background: white; border: 1px solid #d9e2ed; border-radius: 12px; padding: 20px; margin: 16px 0; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    label { display: block; margin: 12px 0; font-weight: 600; }
+    input:not([type=file]), textarea { box-sizing: border-box; display: block; width: 100%; margin-top: 6px; padding: 10px; border: 1px solid #9fb0c4; border-radius: 7px; font: inherit; }
+    textarea { min-height: 180px; resize: vertical; }
+    button { padding: 9px 13px; margin: 4px 6px 4px 0; border: 1px solid #6582a5; border-radius: 7px; background: white; color: #17304a; cursor: pointer; }
+    button.primary { color: white; background: #17589a; }
+    button.danger { color: #9e2434; border-color: #c78891; }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    .muted { color: #52657c; }
+    .status { padding: 10px 12px; background: #e9f2fb; border-radius: 7px; }
+    .error { background: #ffe8eb; color: #8c152a; }
+    .list-item { display: block; width: 100%; text-align: left; }
+    @media(max-width: 700px) { body { padding: 12px; } .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>知識工作台 · Phase 3 本機草稿驗收</h1>
+  <p class="muted">這是獨立測試頁，未加入正式導覽。資料只保存在目前瀏覽器；「準備送出」只建立本機佇列，不會上傳 GitHub 或寫入 Obsidian。</p>
+  <div class="panel">
+    <button id="new-draft" class="primary" type="button">＋ 建立新草稿</button>
+    <span id="connection">檢查網路狀態中</span>
+    <p id="save-status" class="status" role="status">尚未開啟草稿</p>
+    <small id="draft-meta">draftId：— · revision：— · lastLocalSavedAt：—</small>
+    <p id="outbox-count">待正式送出：0 筆（僅本機）</p>
+  </div>
+  <section class="grid">
+    <div class="panel">
+      <h2>目前草稿</h2>
+      <label>標題<input id="title" autocomplete="off"></label>
+      <label>資料夾路徑<input id="folder-path" autocomplete="off" placeholder="工程/工法"></label>
+      <label>內容（fields.body）<textarea id="body"></textarea></label>
+      <label>標籤（逗號分隔）<input id="tags" autocomplete="off"></label>
+      <label>圖片／附件暫存<input id="attachment" type="file"></label>
+      <ul id="attachment-list"></ul>
+      <button id="prepare-send" type="button">準備送出（只排隊）</button>
+      <button id="delete-draft" class="danger" type="button">刪除草稿與附件</button>
+    </div>
+    <div class="panel"><h2>本機草稿清單</h2><div id="draft-list"></div></div>
+  </section>
+</main>
+<script type="module" src="./phase3-draft-harness.js"></script>
+</body>
+</html>
